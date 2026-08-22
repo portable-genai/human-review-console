@@ -8,7 +8,7 @@
 # pins. It lives and dies here: the runtime stage below copies the virtualenv,
 # never this filesystem, so no compiler, no git and no pip cache can ship.
 # --------------------------------------------------------------------------- #
-FROM python:3.12-slim@sha256:423ed6ab25b1921a477529254bfeeabf5855151dc2c3141699a1bfc852199fbf AS builder
+FROM python:3.14-slim@sha256:ce40764625a4ff50df3548277632e7f96c4e77fe75fa848aae9885476e7df5a4 AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
@@ -32,7 +32,7 @@ RUN python -m venv /opt/venv \
 # Stage 2: runtime. The same digest-pinned slim base with only the virtualenv,
 # the shipped policy document and the application configuration copied in.
 # --------------------------------------------------------------------------- #
-FROM python:3.12-slim@sha256:423ed6ab25b1921a477529254bfeeabf5855151dc2c3141699a1bfc852199fbf AS runtime
+FROM python:3.14-slim@sha256:ce40764625a4ff50df3548277632e7f96c4e77fe75fa848aae9885476e7df5a4 AS runtime
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
