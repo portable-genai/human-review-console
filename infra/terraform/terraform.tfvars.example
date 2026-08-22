@@ -1,0 +1,36 @@
+# Copy to terraform.tfvars and fill in. Region defaults to the in-country asia-southeast1 and is
+# validated against the residency allowlist; only project_id and the image are required.
+project_id      = "your-gcp-project"
+container_image = "asia-southeast1-docker.pkg.dev/your-gcp-project/hrz/human-review-console@sha256:REPLACE_WITH_DIGEST"
+iap_audience    = "/projects/000000000000/global/backendServices/0000000000000000000"
+
+# Reviewed Hrz3 export. IAP verifies the subject; this exact map authorizes the tenant and groups.
+# Keep real institution mappings in the approved configuration system, not in this example.
+iap_entitlements_json = <<JSON
+{
+  "approver@example.invalid": {
+    "tenant": "example-bank",
+    "hosted_domain": "example.invalid",
+    "principals": ["group:risk", "group:approver"]
+  }
+}
+JSON
+
+# frame_ancestors = "'self' https://host-app.example.com"
+# region          = "asia-southeast1"
+
+# VPC Service Controls. Roll out dry-run first: apply with vpc_sc_enforce = false, watch the
+# hrz_review_console_vpc_sc_violation alert, add every operator and CI identity below, then set
+# vpc_sc_enforce = true. Set enable_vpc_sc = false only for a project-scoped deploy with no org
+# access policy (that deployment is NOT the sovereign posture).
+# access_policy_id = "123456789012"
+# enable_vpc_sc    = true
+# vpc_sc_enforce   = false
+# operator_members = ["user:oncall@example.invalid", "serviceAccount:deployer@example.invalid"]
+
+# Existing Cloud Monitoring notification channels for the posture alerts.
+# alert_notification_channels = ["projects/your-gcp-project/notificationChannels/0000000000000000000"]
+
+# Set after the internal load balancer fronting the service exists; Cloud Tasks deadline timers
+# POST back here to /v1/cases/{id}/evaluate. Leave empty on the first apply.
+# timer_callback_url = "https://console.internal.example.com"

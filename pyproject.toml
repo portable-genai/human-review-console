@@ -1,0 +1,94 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "human-review-console"
+version = "0.0.1"
+description = "Hrz7 Human-Review & Maker-Checker Console: the shared destination for every requires_human_review escalation. Tenant-partitioned review queue, four-eyes / segregation-of-duties routing, approve / reject / amend with a reason, and a WORM sign-off record. The system enforcer for principle P-06. Built ports-and-adapters on the catalog commons (GCP, asia-southeast1)."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Ashish Awasthi" }]
+keywords = ["maker-checker", "four-eyes", "human-review", "segregation-of-duties", "governance", "gcp", "cloud-run"]
+classifiers = [
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3.12",
+  "Framework :: FastAPI",
+]
+
+# The catalog commons, pinned by tag (no build-time coupling: a deliberate per-repo bump). The
+# managed cloud SDKs live in the [gcp] extra so the local/onprem gate installs none of them.
+dependencies = [
+  "pii-kit @ git+https://github.com/portable-genai/pii-kit@v0.0.1",
+  "hex-service-kit[fastapi] @ git+https://github.com/portable-genai/hex-service-kit@v0.0.1",
+  "agent-eval-kit @ git+https://github.com/portable-genai/agent-eval-kit@v0.0.1",
+  "fastapi>=0.111",
+  "uvicorn[standard]>=0.30",
+  "pydantic>=2.7",
+]
+
+[project.optional-dependencies]
+# Managed cloud SDKs (lazy-imported by the gcp adapters). NOT installed by the local gate.
+# Firestore (review + case stores), Cloud Tasks (deadline timers) and Pub/Sub (case lifecycle
+# events) come from the case engine; google-auth backs IAP identity verification.
+gcp = [
+  "google-cloud-firestore>=2.16",
+  "google-cloud-tasks>=2.16",
+  "google-cloud-pubsub>=2.20",
+  "google-auth>=2.0",
+]
+# The SDK-free dev/test/CI toolchain. Ruff is pinned EXACTLY so formatting never drifts.
+dev = [
+  "pytest>=8.2",
+  "ruff==0.15.18",
+  "mypy>=1.10",
+]
+
+[project.scripts]
+review-console = "review_console.cli.main:main"
+
+[project.urls]
+Homepage = "https://github.com/portable-genai/human-review-console"
+Source = "https://github.com/portable-genai/human-review-console"
+
+# Required for the commons git+https pins (direct references).
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/review_console"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+# `.agents/skills/` is a VENDORED copy of the canonical catalog artifacts
+# (the maintainer's shared agent skills); it must stay byte-for-byte identical to its source, so this repo's
+# formatter never rewrites it. This narrows nothing over src/, tests/, eval/ or scripts/.
+extend-exclude = [".agents"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+"eval/*" = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src"]
+
+# The managed cloud SDKs are lazy-imported only in the gcp adapters and are absent from the
+# SDK-free gate, so there are no stubs to resolve; treat them as untyped rather than failing.
+[[tool.mypy.overrides]]
+module = ["google.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+  "integration: tests that need live cloud services (deselected by default)",
+]

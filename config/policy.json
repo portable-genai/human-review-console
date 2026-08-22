@@ -1,0 +1,21 @@
+{
+  "_comment": [
+    "Bank-owned policy numbers (B4). Every tunable the compliance function owns lives here,",
+    "never in engine code. The shipped values are IDENTICAL to the reference constants in",
+    "src/review_console/domain/maker_checker_service.py (DEFAULT_ROUTING), so this file changes",
+    "nothing until an institution edits it. Point REVIEW_POLICY_PATH at your own copy.",
+    "min_approvals_by_severity is a floor: a producer asking for more still gets more."
+  ],
+  "policy": {
+    "routing": {
+      "min_approvals_by_severity": {
+        "critical": 2,
+        "high": 2,
+        "medium": 1,
+        "low": 1
+      },
+      "enforce_sod": true,
+      "approver_group": "group:approver"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+# Golden case scenarios (obviously fictional). Each opens a complaint case, applies transitions at
+# fixed times, then evaluates at as_of. 2026-06-01 is a Monday; the acknowledgement clock is 2
+# business days, so it is due Wed 2026-06-03. clock_accuracy checks the ack clock's remaining /
+# breached; escalation_accuracy checks findings + requires_human_review; pii_safety checks that a
+# planted identifier in a case attribute never survives into an audit record.
+{"id": "on-track", "opened_at": "2026-06-01T09:00:00+00:00", "transitions": [], "as_of": "2026-06-01T10:00:00+00:00", "expected_ack": {"remaining": 2, "breached": false}, "expected_findings": [], "expected_escalation": false}
+{"id": "approaching", "opened_at": "2026-06-01T09:00:00+00:00", "transitions": [], "as_of": "2026-06-02T10:00:00+00:00", "expected_ack": {"remaining": 1, "breached": false}, "expected_findings": ["approaching_deadline"], "expected_escalation": false}
+{"id": "ack-breached", "opened_at": "2026-06-01T09:00:00+00:00", "transitions": [["under_review", "2026-06-01T11:00:00+00:00"]], "as_of": "2026-06-05T12:00:00+00:00", "expected_ack": {"remaining": -2, "breached": true}, "expected_findings": ["sla_breach"], "expected_escalation": true}
+{"id": "stuck-awaiting", "opened_at": "2026-06-01T09:00:00+00:00", "transitions": [["under_review", "2026-06-01T11:00:00+00:00"], ["awaiting_customer", "2026-06-02T09:00:00+00:00"]], "as_of": "2026-07-03T09:00:00+00:00", "expected_findings": ["sla_breach", "stuck_in_state"], "expected_escalation": true}
+{"id": "planted-pii", "opened_at": "2026-06-01T09:00:00+00:00", "transitions": [], "as_of": "2026-06-01T10:00:00+00:00", "attributes": {"borrower": "NRIC S1234567D on file (FICTIONAL)"}, "expected_findings": [], "expected_escalation": false, "planted": "S1234567D"}
