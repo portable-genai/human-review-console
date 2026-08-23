@@ -93,7 +93,7 @@ python-dotenv==1.2.3
     # via uvicorn
 pyyaml==6.0.3
     # via uvicorn
-ruff==0.15.18
+ruff==0.16.3
     # via human-review-console (pyproject.toml)
 starlette==1.6.0
     # via
