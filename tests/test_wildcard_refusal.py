@@ -193,28 +193,88 @@ def test_a_total_lockdown_is_still_expressible() -> None:
     assert _frame_ancestors(_setting(_FRAME_ANCESTORS_ENV, "'none'")) == "'none'"
 
 
-def test_the_ui_builder_refuses_a_wildcard_too() -> None:
+def _node() -> str:
+    """Node, or a failure. Never a skip.
+
+    A skip would restore exactly the defect this test was rewritten to close: evidence that
+    reports the same green whether or not it ran. ``make check`` already requires node for
+    the console gate, so this adds no dependency the gate did not have.
+    """
+    from shutil import which
+
+    found = which("node")
+    if found is None:
+        raise AssertionError(
+            "node is required to execute the console's frame-ancestors policy. This test "
+            "refuses to skip: the grep-based version it replaced passed while the clickjacking "
+            "control was switched off, and a skip is the same green for the same reason."
+        )
+    return found
+
+
+def _resolve_via_node(value: str) -> subprocess.CompletedProcess[str]:
+    """Call the console's real ``resolveFrameAncestors`` and report what it did.
+
+    Shelling out is the point. This test used to GREP ``security-headers.mjs`` for the
+    literals the policy is written with, and the second re-audit pass proved that vacuous by
+    execution: changing the guard to ``if (false && isWildcard(part))`` leaves every grepped
+    string exactly where it was, so the whole Python suite stayed green with the clickjacking
+    control off. A string a file contains is not a behaviour the file has.
+    """
+    script = (
+        'import { resolveFrameAncestors } from "./ui/lib/security-headers.mjs";'
+        f"try {{ console.log('ALLOWED:' + resolveFrameAncestors({value!r})); }}"
+        "catch (error) { console.log('REFUSED:' + error.message); }"
+    )
+    return subprocess.run(
+        [_node(), "--input-type=module", "-e", script],
+        cwd=_ROOT,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+
+
+@pytest.mark.parametrize("spelling", sorted(_WILDCARD_TOKENS))
+def test_the_ui_builder_refuses_a_wildcard_too(spelling: str) -> None:
     """The document a browser frames is served by Next.js, never through the API middleware.
 
     Fixing only the API would leave the more directly exploitable surface open: the console
     page's own CSP comes from ``ui/lib/security-headers.mjs``, which refused an emptied value
-    and passed a wildcard straight into the directive. The behavioural half of this lives in
-    ``ui/scripts/security-headers.test.mjs`` (``make ui-headers-test``); this is the drift
-    guard the Python gate can run, since the gate does not shell out to node.
+    and passed a wildcard straight into the directive.
 
     The two surfaces must refuse the SAME UNION, and each held only one half of it. The UI had
     the exact-token set and no asterisk test, so ``https://*.evil.example`` was emitted verbatim
     and CSP honoured it as every subdomain; the API had the asterisk test as a MEMBERSHIP check
-    over the whole list, so it saw only a lone bare asterisk. Asserting both halves of the UI
-    rule here is what stops one surface being narrowed again without the other.
+    over the whole list, so it saw only a lone bare asterisk.
+
+    Executed, not grepped. ``ui/scripts/security-headers.test.mjs`` asserts the same behaviour
+    and is the richer suite, but it runs behind the node install; this half runs in the Python
+    gate with nothing but node itself.
     """
-    module = (_ROOT / "ui" / "lib" / "security-headers.mjs").read_text(encoding="utf-8")
-    for spelling in sorted(_WILDCARD_TOKENS):
-        assert f'"{spelling}"' in module, f"the UI policy does not name {spelling}"
-    assert "FRAME_ANCESTOR_WILDCARDS.has(part)" in module
-    assert 'part.includes("*")' in module
-    assert "isWildcard(part)" in module
-    assert "never " in module and "contain a wildcard" in module
+    result = _resolve_via_node(spelling)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.startswith("REFUSED:"), (
+        f"the console policy ACCEPTED {spelling!r} as a framing ancestor: {result.stdout.strip()}"
+    )
+    assert "contain a wildcard" in result.stdout
+
+
+def test_the_ui_builder_refuses_a_host_source_wildcard() -> None:
+    """The half a Set cannot match, and the half most likely to be reached in practice."""
+
+    assert _resolve_via_node("https://*.evil.example").stdout.startswith("REFUSED:")
+
+
+def test_the_ui_builder_still_accepts_a_real_origin() -> None:
+    """The allow path, so the refusals above cannot be satisfied by a policy that refuses all."""
+
+    result = _resolve_via_node("https://portal.example")
+
+    assert result.stdout.startswith("ALLOWED:"), result.stdout
+    assert "https://portal.example" in result.stdout
 
 
 if __name__ == "__main__":  # pragma: no cover
