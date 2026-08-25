@@ -12,14 +12,23 @@ import json
 from typing import Any
 
 from hex_service_kit.assertion import require_claims, require_pinned_algorithm
+from hex_service_kit.federation import IAP_ASSERTION_HEADER, IAP_ISSUER, IAP_KEYS_URL
 from hex_service_kit.identity import IdentityError, Principal, RequestContext
 
 from ...config import Settings
 from ...ports.identity import VERIFIED
 
-_IAP_ASSERTION_HEADER = "x-goog-iap-jwt-assertion"
-_IAP_KEYS_URL = "https://www.gstatic.com/iap/verify/public_key"
-_IAP_ISSUER = "https://cloud.google.com/iap"
+# This repository's names for the kit's transport facts. They are REBOUND, not re-declared:
+# the header name, the issuer and the key-set URL are the same three strings in every
+# repository that verifies an IAP assertion, and while each kept its own copy the population
+# could drift without anything noticing. Rebinding makes a divergence between this adapter and
+# the reviewed set impossible rather than merely unlikely.
+#
+#: ``verify_token`` does not check the issuer at all (``verify_oauth2_token`` is the wrapper
+#: that does), so this adapter checks it itself against the kit's value.
+_IAP_ASSERTION_HEADER = IAP_ASSERTION_HEADER
+_IAP_KEYS_URL = IAP_KEYS_URL
+_IAP_ISSUER = IAP_ISSUER
 
 #: The claims this deployment requires before it reads any of them. A claim that is present
 #: but empty counts as missing, which a per-field `or` chain cannot express.
