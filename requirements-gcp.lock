@@ -17,7 +17,7 @@
 #
 # tag -> commit, and `tests/unit/test_repo_artifacts.py` proves each line against the tag
 # `pyproject.toml` names and against the other lockfile:
-#   hex-service-kit  v0.0.3 = d28baa1cc80deff1a69e6a7ffd84d3e948f83871
+#   hex-service-kit  v0.0.4 = 5b52b44dc73fd6bb11125272fd2766d57ac9c705
 #   agent-eval-kit   v0.0.1 = a79f0afd125ba81c0fec001f9617f9473d6d7ec1
 #   pii-kit          v0.0.1 = 654493048a8434d645757cc916bb9d446313688f
 agent-eval-kit @ git+https://github.com/portable-genai/agent-eval-kit@a79f0afd125ba81c0fec001f9617f9473d6d7ec1
@@ -56,7 +56,7 @@ google-api-core==2.34.0
     #   google-cloud-firestore
     #   google-cloud-pubsub
     #   google-cloud-tasks
-google-auth==2.56.3
+google-auth==2.57.0
     # via
     #   human-review-console (pyproject.toml)
     #   google-api-core
@@ -64,11 +64,11 @@ google-auth==2.56.3
     #   google-cloud-firestore
     #   google-cloud-pubsub
     #   google-cloud-tasks
-google-cloud-core==2.6.1
+google-cloud-core==2.7.0
     # via google-cloud-firestore
-google-cloud-firestore==2.28.1
+google-cloud-firestore==2.29.0
     # via human-review-console (pyproject.toml)
-google-cloud-pubsub==2.39.1
+google-cloud-pubsub==2.39.2
     # via human-review-console (pyproject.toml)
 google-cloud-tasks==2.24.0
     # via human-review-console (pyproject.toml)
@@ -98,7 +98,7 @@ h11==0.16.0
     # via
     #   httpcore
     #   uvicorn
-hex-service-kit @ git+https://github.com/portable-genai/hex-service-kit@d28baa1cc80deff1a69e6a7ffd84d3e948f83871
+hex-service-kit @ git+https://github.com/portable-genai/hex-service-kit@5b52b44dc73fd6bb11125272fd2766d57ac9c705
     # via human-review-console (pyproject.toml)
 httpcore==1.0.9
     # via httpx
@@ -106,7 +106,7 @@ httptools==0.8.0
     # via uvicorn
 httpx==0.28.1
     # via agent-eval-kit
-idna==3.18
+idna==3.19
     # via
     #   anyio
     #   httpx
@@ -128,7 +128,7 @@ proto-plus==1.28.3
     #   google-cloud-firestore
     #   google-cloud-pubsub
     #   google-cloud-tasks
-protobuf==7.35.1
+protobuf==7.36.0
     # via
     #   google-api-core
     #   google-cloud-firestore
@@ -178,7 +178,7 @@ typing-inspection==0.4.4
     #   pydantic
 urllib3==2.7.0
     # via requests
-uvicorn==0.52.3
+uvicorn==0.52.4
     # via human-review-console (pyproject.toml)
 uvloop==0.22.1 ; platform_python_implementation != 'PyPy' and sys_platform != 'cygwin' and sys_platform != 'win32'
     # via uvicorn
