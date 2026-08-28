@@ -34,6 +34,7 @@ ui/next-env.d.ts
 # would freeze version-coupled guidance and reference a path absent from a fresh clone.
 # Ignored rather than deleted because `next dev` re-creates both on every run.
 ui/AGENTS.md
+ui/CLAUDE.md
 
 # Provider selections are source-controlled; do not ignore .terraform.lock.hcl.
 # Terraform
