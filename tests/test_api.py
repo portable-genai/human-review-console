@@ -169,3 +169,14 @@ def test_service_intake_accepts_correct_token(token_env: str) -> None:
     assert queue.status_code == 200
     queued = next(item for item in queue.json() if item["review_id"] == body["review_id"])
     assert queued["source_key"] == "doc1:demo-bank:case-001:cdd_dossier"
+
+
+def test_the_hosted_gate_can_refuse_a_merge() -> None:
+    """Deliberately red, to prove the required hosted check BLOCKS a merge.
+
+    Backlog item 18 asks for this. Sixteen pull requests had proved the rebuilt check
+    reports green; nothing had yet observed it refuse, and a gate seen only to pass cannot
+    be told apart from a gate that always passes. This test exists for one CI run and is
+    removed in the next commit on this branch.
+    """
+    assert False, "deliberate failure: proving the hosted check refuses a merge"
