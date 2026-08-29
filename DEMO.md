@@ -34,9 +34,9 @@ The walkthrough proves, in order:
 2. The analyst tries to approve their own item. Four-eyes refuses: `DENIED ['self_approval']`.
    Nothing is recorded as an approval.
 3. A distinct approver provides the first eye. The item stays `pending` (1 of 2).
-4. A second distinct approver clears it. The item is `approved` (2 of 2).
-5. A second independent approver clears it and the item leaves the pending queue.
-6. An other-tenant persona sees an empty queue while the real item exists.
+4. A second distinct approver clears it: the item is `approved` (2 of 2) and it leaves the
+   pending queue.
+5. An other-tenant persona sees an empty queue while the real item exists.
 
 Run the exact unattended CI path with `make demo-selftest`. The script asserts live state from the
 running API and UI; it does not compare against canned screenshots.
@@ -75,8 +75,11 @@ partition, demonstrated.
 ### The console UI
 
 ```bash
-cd ui && npm install && npm run dev    # http://localhost:3000
+cd ui && npm install && npm run build && npm run start    # http://localhost:3000
 ```
+
+Every demo runs against a production build, never a development server. `npm run dev` is the
+developer loop with hot reload, and it is not what a presenter shows.
 
 The queue view lists the tenant's pending items; open one to approve / reject / amend with a
 reason. The persona picker (top of the page) switches the acting reviewer so four-eyes and the
