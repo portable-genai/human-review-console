@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Human-Review Console",
-  description: "Maker-checker review queue and sign-off (Hrz7).",
+  description: "Maker-checker review queue and sign-off.",
 };
 
 // Required by the nonce CSP, not a performance preference. `proxy.ts` mints a per-request script
