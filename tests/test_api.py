@@ -169,4 +169,3 @@ def test_service_intake_accepts_correct_token(token_env: str) -> None:
     assert queue.status_code == 200
     queued = next(item for item in queue.json() if item["review_id"] == body["review_id"])
     assert queued["source_key"] == "doc1:demo-bank:case-001:cdd_dossier"
-
