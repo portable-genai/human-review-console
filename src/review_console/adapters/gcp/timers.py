@@ -80,7 +80,11 @@ class CloudTasksTimerAdapter:
         # A not-found on delete is fine; we are (re)creating it next.
         with contextlib.suppress(Exception):
             client.delete_task(name=name)
-        client.create_task(parent=parent, task=task)
+        # The client accepts a mapping at runtime through protobuf-plus, and its own signature
+        # says Task. Constructing the message is the honest reading of that signature, and it
+        # also means a key this API does not define fails HERE rather than at the far end of a
+        # call nothing in the offline gate can make.
+        client.create_task(parent=parent, task=tasks_v2.Task(task))
 
     def cancel(  # pragma: no cover - needs live GCP
         self, *, tenant: str, case_id: str, clock: str
