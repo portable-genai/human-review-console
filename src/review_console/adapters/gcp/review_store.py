@@ -53,6 +53,11 @@ class FirestoreReviewStore:
         collection = self._collection(client, item.tenant)
         query = collection.where("request.source_key", "==", item.request.source_key).limit(1)
 
+        # REQUIRED by the offline gate, whose dev lock has no firestore, so the decorator
+        # resolves to Any and is untyped. Reported UNUSED by the lint-gcp job, whose runtime
+        # lock DOES install firestore, which ships no py.typed. The two checks disagree about
+        # this one line, and deleting it to satisfy the non-blocking one breaks the blocking
+        # one. Recorded in backlog item 7: promotion is not a one-word change.
         @firestore.transactional  # type: ignore[untyped-decorator]
         def create_or_load(transaction: Any) -> tuple[ReviewItem, bool]:
             docs = query.get(transaction=transaction)
