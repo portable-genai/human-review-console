@@ -1,6 +1,6 @@
 .PHONY: help install lint format typecheck test eval check run-api smoke demo demo-json \
 	demo-selftest portability-demo ui-install ui-check ui-headers-test terraform-check \
-	docker-build clean lock
+	docker-build clean lock prove-exposure
 
 PY ?= python3
 PY := $(if $(wildcard .venv/bin/python),.venv/bin/python,$(PY))
@@ -36,7 +36,14 @@ eval: ## Offline evaluation gate (smoke; exit non-zero on fail).
 portability: ## Execute the bounded offline/profile portability proof.
 	PYTHONPATH=src $(PY) scripts/portability_demo.py
 
-check: lint typecheck test eval portability ## Lint + typecheck + test + eval + portability.
+prove-exposure: ## Drive the whole exposure matrix over a REAL socket from a REAL LAN peer.
+	# The derivation this backs is gated; until now the peer proof was not, so a script that
+	# could only be run by hand stood behind a published claim. It refuses rather than skips
+	# when this host has no non-loopback address, because a proof that quietly declines to run
+	# reports the same green as one that ran.
+	bash scripts/prove-exposure-matrix.sh
+
+check: lint typecheck test eval portability prove-exposure ## Lint + typecheck + test + eval + portability + LAN-peer exposure proof.
 
 run-api: ## Serve the API locally (loopback, local profile).
 	uvicorn review_console.api.app:app --host $(API_HOST) --port $(PORT) --reload
