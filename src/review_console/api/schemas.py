@@ -124,6 +124,11 @@ class DecisionResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     profile: str
+    #: Provenance the UI banner states on every page: where the runtime sits and which
+    #: model answers. Derived server-side so the console never guesses (org decision,
+    #: 2026-08-30).
+    runtime: str = "local"  # "gcp" | "local"
+    generator_model: str = "no-model"
     region: str
 
 

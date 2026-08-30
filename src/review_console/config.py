@@ -125,6 +125,12 @@ def _validate_region(region: str) -> str:
     return region
 
 
+#: The profiles whose runtime is a managed cloud, for :attr:`Settings.runtime`. ``onprem`` is
+#: NOT one -- running on the adopter's own iron is its entire point, and "on GCP" is the one
+#: sentence that deployment must never print at the top of a page.
+_MANAGED_PROFILES: frozenset[str] = frozenset({"gcp", "platform"})
+
+
 @dataclass(frozen=True, slots=True)
 class ProfileChoice:
     """The ONE resolution of ``REVIEW_PROFILE``, and what each consumer must key off.
@@ -267,6 +273,34 @@ class Settings:
     def __post_init__(self) -> None:
         _validate_profile(self.profile)
         _validate_region(self.region)
+
+    @property
+    def runtime(self) -> str:
+        """Where this process is running, as the UI banner states it: ``gcp`` or ``local``.
+
+        Derived from the profile, never sniffed from the environment. A console that read
+        its runtime from ``window.location`` would be right until the deployment served
+        through a proxy and wrong silently after that, so the service is the one asked.
+        """
+        return "gcp" if self.profile in _MANAGED_PROFILES else "local"
+
+    @property
+    def generator_model(self) -> str:
+        """Which model answers, for the UI banner (org decision, 2026-08-30).
+
+        None does, and saying so is the point. This console declares no ``llm`` port at
+        all: routing, SLA clocks and quorum are deterministic, and a reviewer's decision
+        is a human's. ``no-model`` is materially different from
+        ``deterministic-offline-stub``, which means a model-shaped port is bound to a
+        stub, and a reviewer approving an escalation is entitled to know which of the two
+        they are looking at.
+
+        It is a constant here because the absence is structural rather than configured:
+        there is no binding table to read it from. If this console ever grows an ``llm``
+        port, this property has to be rewritten to read that binding -- which is the right
+        amount of friction for adding a model to a human-review surface.
+        """
+        return "no-model"
 
     @property
     def resolved_audit_anchor_path(self) -> str:
