@@ -7,12 +7,20 @@ offline / onprem profiles import this module with no GCP SDK installed.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any, cast
 
 from hex_service_kit.serialization import dataclass_from_jsonable, to_jsonable
 
 from ...config import Settings
 from ...domain.models import ReviewItem
+
+#: The one thing this module needs from ``firestore.transactional``: it takes the transaction
+#: callback and hands back something callable with the same result. Declared here so the
+#: decorator is typed whether or not the SDK is installed -- see the note at its use.
+_Transactional = Callable[
+    [Callable[[Any], tuple[ReviewItem, bool]]], Callable[[Any], tuple[ReviewItem, bool]]
+]
 
 
 def _hydrate(data: dict[str, Any]) -> ReviewItem:
@@ -53,12 +61,22 @@ class FirestoreReviewStore:
         collection = self._collection(client, item.tenant)
         query = collection.where("request.source_key", "==", item.request.source_key).limit(1)
 
-        # REQUIRED by the offline gate, whose dev lock has no firestore, so the decorator
-        # resolves to Any and is untyped. Reported UNUSED by the lint-gcp job, whose runtime
-        # lock DOES install firestore, which ships no py.typed. The two checks disagree about
-        # this one line, and deleting it to satisfy the non-blocking one breaks the blocking
-        # one. Recorded in backlog item 7: promotion is not a one-word change.
-        @firestore.transactional  # type: ignore[untyped-decorator]
+        # Whether this decorator counted as "untyped" used to be a property of the ENVIRONMENT
+        # rather than of this file: `firestore.transactional` is a typed callable where the SDK
+        # is installed and `Any` where it is not. So the offline gate REQUIRED a
+        # `# type: ignore[untyped-decorator]` here and the lint-gcp job reported the same comment
+        # as unused, and deleting it to satisfy either check broke the other -- two checks
+        # disagreeing about one line.
+        #
+        # (The earlier note here blamed firestore for shipping no `py.typed`. It ships one, and
+        # `transactional` is annotated; the disagreement was only ever about the SDK's presence.)
+        #
+        # Declaring the signature this code relies on removes the disagreement in both
+        # directions, and unlike the ignore it is CHECKED: if `create_or_load` stopped matching
+        # `_Transactional`, mypy would say so instead of staying quiet.
+        transactional = cast(_Transactional, firestore.transactional)
+
+        @transactional
         def create_or_load(transaction: Any) -> tuple[ReviewItem, bool]:
             docs = query.get(transaction=transaction)
             if docs:
@@ -66,7 +84,10 @@ class FirestoreReviewStore:
             transaction.set(collection.document(item.review_id), to_jsonable(item))
             return item, True
 
-        return cast(tuple[ReviewItem, bool], create_or_load(client.transaction()))
+        # No cast here any more: the declared decorator type carries the result through, which
+        # is the erasure the old `# type: ignore` was quietly paying for. Both checks now agree
+        # that this line needs nothing, where before they disagreed about the line above it.
+        return create_or_load(client.transaction())
 
     def get(self, tenant: str, review_id: str) -> ReviewItem | None:  # pragma: no cover
         from google.cloud import firestore
