@@ -24,6 +24,7 @@ class PubSubEventPublisher:
         self, *, event_type: str, tenant: str, case_id: str, attributes: dict[str, str]
     ) -> None:
         from google.cloud import pubsub_v1
+        from google.pubsub_v1 import types as pubsub_types
 
         project = read_env_setting("REVIEW_GCP_PROJECT")
         topic = read_env_setting("REVIEW_EVENTS_TOPIC")
@@ -36,11 +37,27 @@ class PubSubEventPublisher:
         topic_path = publisher.topic_path(project.value, topic.value)
         # The message body is content-free (the event type); ids + decision attributes travel as
         # Pub/Sub attributes so a subscriber can filter without parsing a payload.
-        publisher.publish(
-            topic_path,
-            event_type.encode("utf-8"),
-            event_type=event_type,
-            tenant=tenant,
-            case_id=case_id,
-            **{k: str(v) for k, v in attributes.items()},
-        ).result()
+        #
+        # Attributes go in the MESSAGE's own map rather than through `publisher.publish`'s
+        # `**attrs`, and that is a correctness fix rather than a style choice.
+        # `publish(topic, data, ordering_key="", retry=..., timeout=..., **attrs)` puts caller
+        # attributes in the same keyword space as its own parameters, so an attribute named
+        # `retry`, `timeout` or `ordering_key` is taken as an API argument and NEVER published:
+        # the call succeeds, the subscriber filter silently never matches, and nothing is red
+        # anywhere. `attributes` is caller-supplied, so the collision is reachable rather than
+        # theoretical -- the same shape as the audit-attribution overwrite in `onprem-dlp`,
+        # where reserved names arriving in a payload replaced the fields around it.
+        #
+        # A map field has no such namespace, so the hazard is removed rather than guarded. The
+        # existing call awaited `.result()` immediately, which made the convenience wrapper's
+        # batching a no-op, so this publishes exactly as synchronously as it did before.
+        message = pubsub_types.PubsubMessage(
+            data=event_type.encode("utf-8"),
+            attributes={
+                "event_type": event_type,
+                "tenant": tenant,
+                "case_id": case_id,
+                **{k: str(v) for k, v in attributes.items()},
+            },
+        )
+        publisher.api.publish(topic=topic_path, messages=[message])
