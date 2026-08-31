@@ -28,13 +28,6 @@ ui/node_modules/
 ui/.next/
 ui/out/
 ui/next-env.d.ts
-# Emitted by `next dev` via node_modules/next/dist/server/lib/generate-agent-files.js.
-# Generated, not authored: ui/AGENTS.md is a rewritten copy of node_modules/next/AGENTS.md
-# and its only pointer is into the ignored node_modules/next/dist/docs/, so committing it
-# would freeze version-coupled guidance and reference a path absent from a fresh clone.
-# Ignored rather than deleted because `next dev` re-creates both on every run.
-ui/AGENTS.md
-ui/CLAUDE.md
 
 # Provider selections are source-controlled; do not ignore .terraform.lock.hcl.
 # Terraform
