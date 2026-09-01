@@ -20,7 +20,3 @@ updates:
       # add TypeScript 7 support. Minor and patch updates on 5.x still come through.
       - dependency-name: typescript
         update-types: [version-update:semver-major]
-  - package-ecosystem: github-actions
-    directory: "/"
-    schedule:
-      interval: weekly
