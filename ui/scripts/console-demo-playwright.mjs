@@ -343,7 +343,17 @@ async function run(options) {
     await waitForReady(UI_URL, ui, uiLogs, "UI");
 
     const { chromium } = await import("playwright");
-    browser = await chromium.launch({ headless: options.headless, slowMo: options.slowMo });
+    // CHROME_PATH is the fleet's idiom for "use this browser rather than the one Playwright
+    // downloads": the CI runner ships a system chromium and downloads no browser bundles, so a
+    // launch that ignores it fails with "Executable doesn't exist". campaign-planner and
+    // cdd-sow-research already read it; this script did not, which is why its demo-selftest
+    // could not run in CI at all.
+    const executablePath = process.env.CHROME_PATH || undefined;
+    browser = await chromium.launch({
+      headless: options.headless,
+      slowMo: options.slowMo,
+      executablePath,
+    });
     const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     const page = await context.newPage();
     if (options.screenshots) mkdirSync(options.screenshots, { recursive: true });
