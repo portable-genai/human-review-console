@@ -39,6 +39,11 @@ const TWO_STATE_READS_WITH_A_REASON = {
   PYTHON:
     "names the interpreter a DEMO script spawns. It is not shipped in the console bundle, grants " +
     "nothing to a browser, and an emptied value falls through to the documented discovery order.",
+  CHROME_PATH:
+    "names the browser binary a DEMO script launches, the same class as PYTHON above. It is not " +
+    "shipped in the console bundle and grants nothing to a browser: it selects which local " +
+    "executable Playwright drives, and both unset and emptied fall through to Playwright's own " +
+    "downloaded browser, which is the same behaviour rather than a more permissive one.",
 };
 
 // This file itself. It carries DELIBERATE two-state samples, in the red-proof test below, so
