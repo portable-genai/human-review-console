@@ -1,7 +1,8 @@
 """Local ReviewStorePort: durable SQLite, tenant-partitioned and SDK-free.
 
-The database belongs to Hrz7 only. Each operation uses a short-lived connection with WAL and a
-busy timeout, so the local demo survives restarts while concurrent request threads remain safe.
+The database belongs to human-review-console only. Each operation uses a short-lived connection with
+WAL and a busy timeout, so the local demo survives restarts while concurrent request threads remain
+safe.
 """
 
 from __future__ import annotations

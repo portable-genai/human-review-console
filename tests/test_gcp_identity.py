@@ -106,7 +106,7 @@ def test_gcp_identity_rejects_unmapped_subject(monkeypatch: pytest.MonkeyPatch) 
             "hd": "bank.example",
         },
     )
-    with pytest.raises(IdentityError, match="no reviewed Hrz3 entitlement mapping"):
+    with pytest.raises(IdentityError, match="no reviewed agent-registry entitlement mapping"):
         adapter.resolve(_context())
 
 

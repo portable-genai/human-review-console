@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded, executable portability proof for Hrz7.
+"""Bounded, executable portability proof for human-review-console.
 
 This proof runs offline. It exercises the complete profile map, a profile-neutral deterministic
 decision, the local audit chain, and the fail-fast on-prem boundary. It deliberately does not
@@ -49,7 +49,7 @@ def _decision() -> tuple[str, str, int]:
 
 
 def main() -> int:
-    print("Hrz7 bounded portability proof")
+    print("human-review-console bounded portability proof")
 
     assert set(_IDENTITY_BINDINGS) == RUNTIME_PROFILES
     assert all(set(bindings) == RUNTIME_PROFILES for bindings in _BINDINGS.values())
@@ -65,7 +65,10 @@ def main() -> int:
     gcp = build_container(Settings(profile="gcp"))
     platform = build_container(Settings(profile="platform"))
     assert gcp.review_store.__class__ is platform.review_store.__class__
-    print("PASS managed binding: platform explicitly selects Hrz7's reviewed GCP adapters")
+    print(
+        "PASS managed binding: platform explicitly selects human-review-console's reviewed GCP "
+        "adapters"
+    )
 
     onprem = build_container(Settings(profile="onprem"))
     try:

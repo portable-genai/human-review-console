@@ -4,15 +4,15 @@ Every other user-facing repository in this fleet now ends `resolve()` with one
 :func:`hex_service_kit.federation.principal_from_iap_claims` call. This one does not, and the
 difference is not cosmetic: this adapter is an AUTHORIZATION gate, and the commons is not.
 
-``REVIEW_IAP_ENTITLEMENTS_JSON`` is a reviewed map from a verified address to the tenant and
-the group principals that address holds. A subject absent from it is REFUSED, and so is a
-deployment that has not configured it at all. Nothing in ``FederationPolicy`` expresses that:
-its ``domain_groups`` grants groups by DOMAIN and grants nothing to a domain it does not
-name, so an unlisted subject there resolves to a well-formed principal holding no role. Those
-two are not the same posture, and the difference reads, at the point a resource is refused,
-exactly like a permissions bug rather than a caller who was never admitted. ``Hrz3`` is the
-console a human uses to release a consequential decision, so "admitted with nothing" is the
-wrong answer to give.
+``REVIEW_IAP_ENTITLEMENTS_JSON`` is a reviewed map from a verified address to the tenant and the
+group principals that address holds. A subject absent from it is REFUSED, and so is a deployment
+that has not configured it at all. Nothing in ``FederationPolicy`` expresses that: its
+``domain_groups`` grants groups by DOMAIN and grants nothing to a domain it does not name, so an
+unlisted subject there resolves to a well-formed principal holding no role. Those two are not the
+same posture, and the difference reads, at the point a resource is refused, exactly like a
+permissions bug rather than a caller who was never admitted. ``agent-registry`` is the console a
+human uses to release a consequential decision, so "admitted with nothing" is the wrong answer to
+give.
 
 ``allowed_machine_subjects`` is the closest the commons comes, and it is an allowlist for
 MACHINE callers only: ``principal_from_iap_claims`` applies it when the address ends
@@ -101,7 +101,7 @@ def test_a_verified_subject_with_no_reviewed_entitlement_is_refused_here() -> No
     consequential decisions, so an unreviewed subject is refused at the door instead.
     """
     claims = _claims(email=_STRANGER)
-    with pytest.raises(IdentityError, match="no reviewed Hrz3 entitlement mapping"):
+    with pytest.raises(IdentityError, match="no reviewed agent-registry entitlement mapping"):
         _resolved(claims)
     admitted = _commons(claims)
     assert admitted.subject == _STRANGER

@@ -4,7 +4,7 @@ project_id      = "your-gcp-project"
 container_image = "asia-southeast1-docker.pkg.dev/your-gcp-project/hrz/human-review-console@sha256:REPLACE_WITH_DIGEST"
 iap_audience    = "/projects/000000000000/global/backendServices/0000000000000000000"
 
-# Reviewed Hrz3 export. IAP verifies the subject; this exact map authorizes the tenant and groups.
+# Reviewed agent-registry export. IAP verifies the subject; this exact map authorizes the tenant and groups.
 # Keep real institution mappings in the approved configuration system, not in this example.
 iap_entitlements_json = <<JSON
 {

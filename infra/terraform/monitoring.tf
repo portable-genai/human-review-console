@@ -86,7 +86,7 @@ resource "google_monitoring_alert_policy" "security" {
   notification_channels = var.alert_notification_channels
 
   documentation {
-    content   = "Security signal '${each.key}' fired for the Hrz7 human-review console. Investigate the matching entries in Cloud Logging and the locked sign-off bucket."
+    content   = "Security signal '${each.key}' fired for the human-review-console. Investigate the matching entries in Cloud Logging and the locked sign-off bucket."
     mime_type = "text/markdown"
   }
 

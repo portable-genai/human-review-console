@@ -34,7 +34,7 @@ variable "iap_audience" {
 
 variable "iap_entitlements_json" {
   type        = string
-  description = "Reviewed Hrz3 export mapping verified IAP subjects to tenant, hosted_domain, and principals."
+  description = "Reviewed agent-registry export mapping verified IAP subjects to tenant, hosted_domain, and principals."
 
   validation {
     condition     = can(jsondecode(var.iap_entitlements_json)) && can(tomap(jsondecode(var.iap_entitlements_json)))

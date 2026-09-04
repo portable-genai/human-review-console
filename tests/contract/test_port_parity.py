@@ -22,12 +22,12 @@ managed stack, and the other lets an orphan adapter overstate coverage.
 Two facts specific to this repository shape the file:
 
 * there are FOUR runtime profiles, not three. ``platform`` is a reviewed alias to the managed
-  adapters because this service IS the Hrz7 platform horizontal, so it must be bound as
-  completely as ``gcp`` and is swept here alongside it rather than assumed to follow.
-* the case engine put ``review_router`` on the same hexagon, and it is deliberately
-  wired OUTSIDE ``_BINDINGS`` (``InProcessReviewRouter`` needs the live ``ConsoleService``, not
-  just ``Settings``). That exception is named explicitly below so it stays a reviewed exception
-  rather than becoming the hole through which the next unbound port slips.
+  adapters because this service IS the human-review-console platform horizontal, so it must be bound
+  as completely as ``gcp`` and is swept here alongside it rather than assumed to follow. * the case
+  engine put ``review_router`` on the same hexagon, and it is deliberately wired OUTSIDE
+  ``_BINDINGS`` (``InProcessReviewRouter`` needs the live ``ConsoleService``, not just
+  ``Settings``). That exception is named explicitly below so it stays a reviewed exception rather
+  than becoming the hole through which the next unbound port slips.
 
 Scope note. This file guards the SETS and the constructibility of every binding. The behavioural
 contracts (``onprem`` fails fast, the local stack really queues and disposes) are proven in

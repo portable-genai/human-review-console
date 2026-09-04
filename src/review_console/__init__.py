@@ -1,4 +1,4 @@
-"""Hrz7 Human-Review & Maker-Checker Console.
+"""human-review-console Human-Review & Maker-Checker Console.
 
 The shared destination for every ``requires_human_review`` escalation the catalog raises: a
 tenant-partitioned review queue, four-eyes / segregation-of-duties routing, approve / reject /
@@ -14,7 +14,7 @@ network defaults and the WORM audit log come from ``hex-service-kit``; the eval 
 
 The console owns NO vertical policy. Each consumer supplies its own routing policy (how many
 approvals an action needs, which segregation group a maker sits in) as configuration, exactly as
-Hrz1 the Guardrail Gateway owns no vertical prompt.
+agent-guardrail-gateway the Guardrail Gateway owns no vertical prompt.
 """
 
 from __future__ import annotations

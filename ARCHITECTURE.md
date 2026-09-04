@@ -1,4 +1,4 @@
-# ARCHITECTURE - Hrz7 Case, Workflow & Human-Review Platform
+# ARCHITECTURE - `human-review-console` Case, Workflow & Human-Review Platform
 
 ## The hexagon
 
@@ -75,7 +75,7 @@ Shared edges:
   status and a reason. The loopback exposure guard is derived from that declaration and from
   nothing else, least of all from a service credential.
 - **`adapters/{local,gcp,onprem}/`** - the implementation families; gcp SDK imports are lazy.
-  The explicit `platform` profile selects the reviewed gcp family because Hrz7 is itself the
+  The explicit `platform` profile selects the reviewed gcp family because `human-review-console` is itself the
   shared platform service.
   `adapters/review_router.py` holds the in-process router (see below).
 - **`api/`, `cli/`** - thin inbound adapters translating requests into domain calls; the CLI adds a
@@ -136,7 +136,7 @@ code an auditor can re-run, never an LLM. There is no LLM anywhere in this repo.
 console only records the human's sign-off and the case engine only flags and notifies (a human, via
 the console, disposes); both escalate softly and never auto-execute, which is why the whole catalog
 can route its `requires_human_review` escalations here, and every workflow vertical can inherit the
-case spine, without granting Hrz7 any execution authority.
+case spine, without granting `human-review-console` any execution authority.
 
 ## Dependencies
 
@@ -145,7 +145,7 @@ case spine, without granting Hrz7 any execution authority.
 - `agent-eval-kit` (pinned by tag): the `--mode smoke|gate` eval scaffold and `assert_can_go_red`.
 - `pii-kit` (pinned by tag): the jurisdiction PII pattern pack used to redact before audit.
 
-Mandatory catalog dependencies at runtime: Hrz3 (identity / entitlements) and Hrz5 (WORM audit
+Mandatory catalog dependencies at runtime: `agent-registry` (identity / entitlements) and `agent-observability` (WORM audit
 trail). The case-workflow engine is not a separate runtime dependency: it is a module of this
 service, so a case and the review it escalates share one process, one store and one audit
 trail.

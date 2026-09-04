@@ -1,4 +1,4 @@
-# Embedding and identity - Hrz7 review console
+# Embedding and identity - `human-review-console`
 
 The review console (`ui/`) is an embeddable micro-frontend: it drops into a host application
 same-origin, with the reviewer's identity server-verified and the client-asserted actor discarded.
@@ -19,14 +19,14 @@ This follows the catalog's `embeddable-secure-ui` pattern.
    host owns the frame. The host's IdP fronts both; the API reads the verified identity.
 3. **Standalone behind Cloud IAP.** `REVIEW_PROFILE=gcp`. IAP injects the signed assertion; the
    `IapIdentityAdapter` verifies its exact audience, IAP public-key signature, and issuer. It then
-   maps the exact verified subject through a reviewed Hrz3 export to tenant and principals. No
+   maps the exact verified subject through a reviewed `agent-registry` export to tenant and principals. No
    persona picker.
 
 ## The identity contract
 
 - No request body ever carries a `maker`, `checker`, `tenant` or `actor` field. The maker (at
   submit) and the checker (at decision) are the server-verified `Principal`; tenant and groups
-  come from the reviewed Hrz3 subject map after IAP verification. A caller cannot assert an
+  come from the reviewed `agent-registry` subject map after IAP verification. A caller cannot assert an
   entitlement they do not hold.
 - The four-eyes rule is evaluated against that verified identity: `checker == maker` is a
   `SELF_APPROVAL` denial no matter what the client sends.
@@ -112,7 +112,7 @@ reads the variable now.
 | `REVIEW_CORS_ORIGINS` | API | explicit CORS allowlist (never `*`; empty outside local) |
 | `REVIEW_FRAME_ANCESTORS` | API | CSP frame-ancestors for API responses |
 | `REVIEW_IAP_AUDIENCE` | API | IAP audience to verify (gcp) |
-| `REVIEW_IAP_ENTITLEMENTS_JSON` | API | reviewed Hrz3 subject map to tenant, hosted domain, and principals |
+| `REVIEW_IAP_ENTITLEMENTS_JSON` | API | reviewed `agent-registry` subject map to tenant, hosted domain, and principals |
 | `NEXT_PUBLIC_REVIEW_API_URL` | UI | the API base URL the browser calls |
 | `NEXT_PUBLIC_BASE_PATH` | UI | mount sub-path for same-origin embedding |
 | `NEXT_PUBLIC_EMBED` | UI | `1` to drop page chrome (host owns it) |
@@ -125,5 +125,5 @@ reads the variable now.
 - Front both with the host IdP; do not expose the persona picker outside `local`.
 - Confirm the host passes the verified identity through (IAP assertion or an equivalent verified
   header the `IdentityPort` adapter reads); the UI sends no identity in request bodies.
-- Export and approve the exact Hrz3 subject mappings. Never derive `group:approver` from an email
+- Export and approve the exact `agent-registry` subject mappings. Never derive `group:approver` from an email
   domain or browser-supplied value.

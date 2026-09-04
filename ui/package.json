@@ -2,7 +2,7 @@
   "name": "review-console-ui",
   "version": "0.0.1",
   "private": true,
-  "description": "Embeddable review console for the Hrz7 Human-Review & Maker-Checker Console (hrz group).",
+  "description": "Embeddable review console for the human-review-console Human-Review & Maker-Checker Console (hrz group).",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

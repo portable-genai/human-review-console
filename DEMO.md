@@ -1,4 +1,4 @@
-# DEMO - Hrz7 Case, Workflow & Human-Review Platform
+# DEMO - `human-review-console` Case, Workflow & Human-Review Platform
 
 Two halves to see: the human-review console and the case, clock and workflow engine. Each
 runs offline (no cloud, deterministic) and on managed cloud. One service serves both.

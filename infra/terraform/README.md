@@ -1,4 +1,4 @@
-# infra/terraform - deploy posture for Hrz7
+# infra/terraform - deploy posture for `human-review-console`
 
 Terraform that makes the console's cloud posture enforceable at plan time, not merely documented.
 The reference cloud is Google Cloud; the shape (region allowlist, location Org Policy,
@@ -21,7 +21,7 @@ and validated in `variables.tf`, so a plan is rejected if a deploy would place d
 | `tasks_events.tf` | Cloud Tasks queue (case deadline timers) + Pub/Sub topic (case-lifecycle events), in-region |
 | `logging_worm.tf` | locked retention bucket + sink for the sign-off trail (immutable, 7 years) |
 | `iam.tf` | least-privilege runtime SA + Cloud Tasks OIDC invoker SA (no exported keys) |
-| `cloud_run.tf` | one internal-only service (8087), CMEK revision, `REVIEW_PROFILE=gcp` opt-in, exact IAP audience plus reviewed Hrz3 entitlements, `REVIEW_*` case env, `/healthz` probes |
+| `cloud_run.tf` | one internal-only service (8087), CMEK revision, `REVIEW_PROFILE=gcp` opt-in, exact IAP audience plus reviewed `agent-registry` entitlements, `REVIEW_*` case env, `/healthz` probes |
 | `apis.tf` | enables only the managed services this stack uses (incl. cloudtasks + pubsub) |
 
 ```bash

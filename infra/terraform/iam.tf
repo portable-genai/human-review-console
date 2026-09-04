@@ -2,7 +2,7 @@
 resource "google_service_account" "runtime" {
   project      = var.project_id
   account_id   = "review-console-run"
-  display_name = "Hrz7 Human-Review Console runtime"
+  display_name = "human-review-console runtime"
 }
 
 # Scoped to exactly what the console needs: read/write its Firestore data, enqueue Cloud Tasks for
@@ -45,7 +45,7 @@ resource "google_project_iam_member" "token_creator" {
 resource "google_service_account" "tasks_invoker" {
   project      = var.project_id
   account_id   = "review-tasks-invoker"
-  display_name = "Hrz7 console Cloud Tasks deadline-callback invoker"
+  display_name = "human-review-console Cloud Tasks deadline-callback invoker"
 }
 
 resource "google_cloud_run_v2_service_iam_member" "tasks_invoker" {

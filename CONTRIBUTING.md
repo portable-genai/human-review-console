@@ -1,4 +1,4 @@
-# Contributing - Hrz7 Human-Review & Maker-Checker Console
+# Contributing - `human-review-console` Human-Review & Maker-Checker Console
 
 ## The hard gate (green before anything lands)
 

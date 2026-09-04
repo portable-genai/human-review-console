@@ -133,7 +133,7 @@ def _service_review_body() -> dict[str, object]:
         "subject": "Acme Holdings (FICTIONAL)",
         "maker": "demo.analyst@bank.example",
         "tenant": "demo-bank",
-        "source_key": "doc1:demo-bank:case-001:cdd_dossier",
+        "source_key": "cdd-sow-research:demo-bank:case-001:cdd_dossier",
         "severity": "medium",
     }
 
@@ -163,9 +163,9 @@ def test_service_intake_accepts_correct_token(token_env: str) -> None:
     # The submitted review lands in that tenant's queue and can then be four-eyes reviewed.
     body = resp.json()
     assert body["state"] == "pending"
-    assert body["source_key"] == "doc1:demo-bank:case-001:cdd_dossier"
+    assert body["source_key"] == "cdd-sow-research:demo-bank:case-001:cdd_dossier"
 
     queue = _client().get("/v1/reviews", headers={"X-Dev-Persona": "approver"})
     assert queue.status_code == 200
     queued = next(item for item in queue.json() if item["review_id"] == body["review_id"])
-    assert queued["source_key"] == "doc1:demo-bank:case-001:cdd_dossier"
+    assert queued["source_key"] == "cdd-sow-research:demo-bank:case-001:cdd_dossier"

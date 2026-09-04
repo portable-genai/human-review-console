@@ -21,7 +21,7 @@ from typing import Any
 from .kernel import Decision, Disposition, EligibilityFinding, ReviewState, Severity
 from .models import Approval, ReviewDecision, ReviewItem
 
-#: The entitlement a principal must hold to act as a checker (an Hrz3 registry scope in prod).
+#: The entitlement a principal must hold to act as a checker (an agent-registry scope in prod).
 APPROVER_GROUP = "group:approver"
 
 

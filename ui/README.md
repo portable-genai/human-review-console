@@ -1,4 +1,4 @@
-# Review console UI (Hrz7)
+# Review console UI (`human-review-console`)
 
 An embeddable Next.js micro-frontend for the Human-Review & Maker-Checker Console: a pending-review
 queue and a per-item approve / reject / amend panel with a reason box, plus a local persona picker.
