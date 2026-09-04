@@ -1,8 +1,8 @@
-# SPEC - Hrz7 Case, Workflow & Human-Review Platform
+# SPEC - `human-review-console` Case, Workflow & Human-Review Platform
 
 ## 1. Purpose and scope
 
-Hrz7 is one service with two co-resident halves:
+`human-review-console` is one service with two co-resident halves:
 
 - **The human-review console.** The shared destination for every `requires_human_review`
   escalation the catalog raises: a tenant-partitioned review queue, a deterministic four-eyes /
@@ -14,7 +14,7 @@ Hrz7 is one service with two co-resident halves:
   escalation, and a tenant-partitioned case store. A breach or a stall escalates a case straight
   into the review queue, in-process.
 
-Out of scope by design: Hrz7 does not execute the underlying action, does not own any vertical
+Out of scope by design: `human-review-console` does not execute the underlying action, does not own any vertical
 policy (state machines, business rules, transitions, clocks, prompts are all consumer-supplied),
 contains no LLM, and does not compute severity, eligibility or escalation from anything other than
 the inputs a consumer gives it plus the server-verified principal.
@@ -67,7 +67,7 @@ reads directly, not by setting a secret.
 |---|---|---|---|---|---|---|
 | `local` | durable SQLite review queue plus in-memory case store | in-memory register | in-memory list | hash-chained WORM log (hex-service-kit) | seeded dev personas | none |
 | `gcp` | Firestore native (per-tenant path, CMEK) | Cloud Tasks | Pub/Sub | Cloud Logging locked WORM bucket | IAP signed assertion | lazy |
-| `platform` | explicit Hrz7 managed binding, same adapters as `gcp` | Cloud Tasks | Pub/Sub | Cloud Logging locked WORM bucket | IAP signed assertion | lazy |
+| `platform` | explicit `human-review-console` managed binding, same adapters as `gcp` | Cloud Tasks | Pub/Sub | Cloud Logging locked WORM bucket | IAP signed assertion | lazy |
 | `onprem` | fail-fast placeholder | fail-fast | fail-fast | fail-fast placeholder | fail-fast placeholder | none |
 
 Any other profile value is rejected. Identity uses its own exact profile map, so a channel or
@@ -143,7 +143,7 @@ tenant's ids exist.
 
 In `gcp` and `platform`, the adapter verifies the assertion against the exact
 `REVIEW_IAP_AUDIENCE`, IAP public keys, and IAP issuer. The exact verified email or subject must
-then exist in the reviewed `REVIEW_IAP_ENTITLEMENTS_JSON` Hrz3 export, which supplies tenant,
+then exist in the reviewed `REVIEW_IAP_ENTITLEMENTS_JSON` `agent-registry` export, which supplies tenant,
 expected hosted domain, and principals. A missing mapping, domain mismatch, or absent
 `group:approver` fails closed; no entitlement is inferred from browser input or email domain.
 

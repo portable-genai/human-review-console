@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "human-review-console"
 version = "0.0.1"
-description = "Hrz7 Human-Review & Maker-Checker Console: the shared destination for every requires_human_review escalation. Tenant-partitioned review queue, four-eyes / segregation-of-duties routing, approve / reject / amend with a reason, and a WORM sign-off record. The system enforcer for principle P-06. Built ports-and-adapters on the catalog commons (GCP, asia-southeast1)."
+description = "human-review-console: the Human-Review & Maker-Checker Console, the shared destination for every requires_human_review escalation. Tenant-partitioned review queue, four-eyes / segregation-of-duties routing, approve / reject / amend with a reason, and a WORM sign-off record. The system enforcer for principle P-06. Built ports-and-adapters on the catalog commons (GCP, asia-southeast1)."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }

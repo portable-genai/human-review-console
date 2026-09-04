@@ -1,6 +1,6 @@
 # FAQ index
 
-These role-specific FAQs explain Hrz7 without duplicating capabilities owned by sibling catalog
+These role-specific FAQs explain `human-review-console` without duplicating capabilities owned by sibling catalog
 systems.
 
 | FAQ | Audience | Focus |

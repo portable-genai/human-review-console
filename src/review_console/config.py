@@ -58,8 +58,10 @@ RESIDENCY_ALLOWLIST = frozenset({"asia-southeast1", "asia-southeast2"})
 DEFAULT_POLICY_PATH = "config/policy.json"
 
 # port -> profile -> "module:Class". Every runtime/data port has an explicit binding for every
-# profile. This service is itself the Hrz7 platform horizontal, so the ``platform`` profile is a
-# reviewed alias to its managed adapters, not an outbound delegate to another Hrz7 instance.
+# profile. This service is itself the human-review-console platform horizontal, so the ``platform``
+# profile is a
+# reviewed alias to its managed adapters, not an outbound delegate to another human-review-console
+# instance.
 _BINDINGS: dict[str, dict[str, str]] = {
     "review_store": {
         "local": "review_console.adapters.local.review_store:LocalReviewStore",
@@ -258,7 +260,8 @@ class Settings:
     iap_audience: str = ""
     iap_entitlements_json: str = ""
     # A local review queue must survive a process restart so a producer retry cannot create a
-    # second maker-checker item.  This database belongs to Hrz7 only; producers keep their own
+    # second maker-checker item.  This database belongs to human-review-console only; producers keep
+    # their own
     # outboxes and never write it directly.
     # Explicit Settings construction remains ephemeral for unit tests and embedders. The running
     # local application uses ``load`` below, whose default is the durable on-disk database.

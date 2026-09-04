@@ -1,6 +1,6 @@
 # Portability FAQ
 
-### What portability does Hrz7 prove?
+### What portability does `human-review-console` prove?
 
 `make portability-demo` proves four bounded properties offline: complete explicit profile maps,
 the same deterministic domain result across fresh local stacks, a verifiable local audit chain,
@@ -10,8 +10,8 @@ and an on-prem placeholder that fails fast instead of silently using GCP.
 
 - `local` is the working SDK-free stack for development, test, CI, and demos.
 - `gcp` selects the managed Firestore, Cloud Tasks, Pub/Sub, WORM, and IAP adapters.
-- `platform` explicitly selects the same managed adapters because Hrz7 is itself the shared
-  platform service. It does not delegate to another Hrz7.
+- `platform` explicitly selects the same managed adapters because `human-review-console` is itself the shared
+  platform service. It does not delegate to another `human-review-console`.
 - `onprem` is the reviewed adapter contract and migration boundary. It is not a completed
   sovereign deployment.
 

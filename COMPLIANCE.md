@@ -1,6 +1,6 @@
-# COMPLIANCE - Hrz7 Case, Workflow & Human-Review Platform
+# COMPLIANCE - `human-review-console` Case, Workflow & Human-Review Platform
 
-How this repo realizes each General Principle (P-01..P-13) and dependency rule (R1..R7). Hrz7 is
+How this repo realizes each General Principle (P-01..P-13) and dependency rule (R1..R7). `human-review-console` is
 the system enforcer for **P-06**: it is the destination the whole catalog's `requires_human_review`
 escalations route to. It also hosts the case, clock & workflow engine (`domain/cases/`). Both
 halves run in one service under one control posture: one runtime SA, one CMEK key set, one
@@ -18,29 +18,29 @@ and where the case engine adds surface, the same control covers it.
 | P-05 | Grounding over fine-tuning | N/A: no model, no training. Decisions are deterministic code (maker-checker, state machine, clocks), not a learned function. |
 | **P-06** | **Human-in-the-loop / maker-checker** | **The whole system.** `maker_checker_service.check_eligibility` enforces four-eyes (`SELF_APPROVAL`), SoD, least privilege and N-eyes distinctness as pure fail-closed code; `console_service` records a WORM sign-off and never auto-executes. The case engine reinforces it: a breach or stall sets `requires_human_review` and routes the case into this same console (in-process, via `ReviewRouterPort`), never advancing a case itself. This repo IS P-06's system enforcer. |
 | P-07 | Auditable & explainable by design | One shared WORM sink for both halves. Every disposition attempt (allowed or denied) writes an immutable, hash-chained, already-redacted `SignOffEvent`; every case action (open, transition, evaluate, refused transition) writes a `CaseAuditEvent`, and the full transition history is kept on the case. `HashChainedAuditLog.verify_chain()` proves tamper-evidence; `logging_worm.tf` is the immutable cloud sink. |
-| P-08 | Eval-gated promotion | `eval/run_eval.py` runs `--mode smoke` (offline) and `--mode gate` (the Hrz4 promotion authority). Review metrics (`four_eyes_integrity`, `pii_safety`) and case metrics (`clock_accuracy`, `escalation_accuracy`, `case_pii_safety`) score together; the safety metrics each have a not-falsely-green test. |
+| P-08 | Eval-gated promotion | `eval/run_eval.py` runs `--mode smoke` (offline) and `--mode gate` (the `model-quality-gate` promotion authority). Review metrics (`four_eyes_integrity`, `pii_safety`) and case metrics (`clock_accuracy`, `escalation_accuracy`, `case_pii_safety`) score together; the safety metrics each have a not-falsely-green test. |
 | P-09 | Defense in depth / zero trust | Server-verified `Principal` only (client actor discarded); fail-closed S2S caller auth; tenant partition enforced in BOTH the domain and the store, for reviews and cases alike; CMEK (one key set), least-privilege runtime SA (one SA) and no SA-keys in `infra/terraform`. |
 | P-10 | Resilience & graceful degradation | Fail-closed by construction: an ineligible or cross-tenant disposition denies rather than proceeding; a terminal item rejects re-disposition (409); an illegal case transition is refused (409); a cross-tenant case read is a 404. Case deadline timers (Cloud Tasks) fire even if no one polls, so a breach is not missed. The gcp adapters degrade to the on-prem placeholder contract when unbound. |
 | P-11 | Cost & latency control | No model calls, so no token cost; every decision is pure O(1) / O(history) code. Cloud Run scales with request concurrency capped. |
 | P-12 | Reversibility / documented exit | `docs/onprem-migration.md` is the exit guide; the `onprem` profile proves the domain runs with the client's own adapters and no GCP. |
-| P-13 | Fair, consented marketing | N/A: Hrz7 is a horizontal control plane, not a marketing surface. |
+| P-13 | Fair, consented marketing | N/A: `human-review-console` is a horizontal control plane, not a marketing surface. |
 
 ## Dependency rules
 
-| # | Rule | Status for Hrz7 |
+| # | Rule | Status for `human-review-console` |
 |---|---|---|
-| R1 | Customer/PII data -> depend on Hrz1 Guardrail | Hrz7 holds no customer PII by design, but redacts review summaries / reasons and case summaries / attributes via the shared `pii-kit` before audit (defense in depth). A deployment fronting Hrz7 with Hrz1 loses nothing. |
-| R2 | Production system -> depend on Hrz5 Observability/Audit | The shared `AuditSinkPort` is the seam for both halves: `local` is the hash-chained WORM log; `gcp` writes to the Cloud Logging WORM sink that Hrz5 owns. |
-| R3 | RAG / grounded -> depend on Hrz2 KB | N/A: no retrieval, no grounding. |
-| R4 | Deployed agent / exposed tool -> register in Hrz3 | Hrz7's identity / entitlement resolution is the Hrz3 seam (`IdentityPort`); the approver entitlement (`group:approver`) is an Hrz3-scoped group in production. |
-| R5 | Promoted to production -> pass Hrz4 gate | `eval/run_eval.py --mode gate` calls the Hrz4 promotion authority via `agent-eval-kit`. |
-| R6 | New project -> pass Rsk3 at intake | This repo was scaffolded to the catalog build standard (ports-and-adapters, three profiles, the hard gate). |
-| R7 | Marketing output -> pass Mkt6 | N/A. |
+| R1 | Customer/PII data -> depend on `agent-guardrail-gateway` | `human-review-console` holds no customer PII by design, but redacts review summaries / reasons and case summaries / attributes via the shared `pii-kit` before audit (defense in depth). A deployment fronting `human-review-console` with `agent-guardrail-gateway` loses nothing. |
+| R2 | Production system -> depend on `agent-observability` | The shared `AuditSinkPort` is the seam for both halves: `local` is the hash-chained WORM log; `gcp` writes to the Cloud Logging WORM sink that `agent-observability` owns. |
+| R3 | RAG / grounded -> depend on `enterprise-knowledge-base` | N/A: no retrieval, no grounding. |
+| R4 | Deployed agent / exposed tool -> register in `agent-registry` | `human-review-console`'s identity / entitlement resolution is the `agent-registry` seam (`IdentityPort`); the approver entitlement (`group:approver`) is an `agent-registry`-scoped group in production. |
+| R5 | Promoted to production -> pass `model-quality-gate` | `eval/run_eval.py --mode gate` calls the `model-quality-gate` promotion authority via `agent-eval-kit`. |
+| R6 | New project -> pass `architecture-validator` at intake | This repo was scaffolded to the catalog build standard (ports-and-adapters, three profiles, the hard gate). |
+| R7 | Marketing output -> pass `marketing-compliance-gate` | N/A. |
 
-## The proposed new rule Hrz7 will enforce
+## The proposed new rule `human-review-console` will enforce
 
-Finding 2 in the catalog build-status doc proposes the natural first dependency rule once Hrz7 is
-`Built`: **any consequential action that sets `requires_human_review` MUST route to Hrz7**. That is
+Finding 2 in the catalog build-status doc proposes the natural first dependency rule once `human-review-console` is
+`Built`: **any consequential action that sets `requires_human_review` MUST route to `human-review-console`**. That is
 P-06 getting a system enforcer instead of terminating in a per-repo boolean. The case half
 satisfies that rule at source: a case that escalates routes into the console in-process, with
 no separate service to reach.
@@ -68,7 +68,7 @@ The `P-*` / `R*` columns above are this build's internal control language. A reg
 them onto its own supervisor's requirements. The rows below are the **MAS (Singapore) reference
 mapping**; a fork adds a table per additional regulator.
 
-| Hrz7 control | Evidence in this repo | MAS reference | What a supervisor looks for |
+| `human-review-console` control | Evidence in this repo | MAS reference | What a supervisor looks for |
 |---|---|---|---|
 | P-06 four-eyes, SoD, N-eyes, fail-closed eligibility | `src/review_console/domain/maker_checker_service.py`, `tests/test_maker_checker_service.py` | MAS Notice 626 §6 (senior-management oversight); MAS FEAT (Accountability) | A qualified, independent human disposes of every consequential action; a maker can never approve their own work |
 | P-06 approval floors owned by the institution | `config/policy.json`, `tests/test_routing_policy_config.py` | MAS Guidelines on Risk Management (delegated authority) | Approval thresholds are set by the bank's policy owner and evidenced, not hard-coded by a vendor |
@@ -81,7 +81,7 @@ mapping**; a fork adds a table per additional regulator.
 
 **To add another regulator** (FCA, HKMA, RBI, OJK, APRA, ...): copy this table, replace the MAS
 column with that supervisor's instrument and section numbers, and re-review the last column with
-local counsel. The Hrz7-control and evidence columns are stable across regulators; only the mapping
-changes. Rsk1's control-mapping module (`domain/control_mapping/` in `compliance-advisory`)
+local counsel. The `human-review-console`-control and evidence columns are stable across regulators; only the mapping
+changes. `compliance-advisory`'s control-mapping module (`domain/control_mapping/` in `compliance-advisory`)
 generates and maintains these crosswalks at scale, so a large estate should integrate it rather
 than hand-maintaining this table.

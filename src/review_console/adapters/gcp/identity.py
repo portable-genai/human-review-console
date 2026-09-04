@@ -97,7 +97,9 @@ class IapIdentityAdapter:
 
         entitlement = self._entitlements.get(subject)
         if entitlement is None:
-            raise IdentityError("verified IAP subject has no reviewed Hrz3 entitlement mapping")
+            raise IdentityError(
+                "verified IAP subject has no reviewed agent-registry entitlement mapping"
+            )
         tenant = str(entitlement.get("tenant") or "").strip()
         groups = entitlement.get("principals")
         if (

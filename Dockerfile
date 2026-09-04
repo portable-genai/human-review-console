@@ -1,4 +1,4 @@
-# Hrz7 Human-Review & Maker-Checker Console serving image.
+# human-review-console Human-Review & Maker-Checker Console serving image.
 # Digest-pinned slim base (dependabot bumps the digest + the lockfile); multi-stage so the build
 # toolchain never reaches the runtime layer; non-root; healthchecked; installs from the committed
 # gcp lockfile so the image matches pip-audit and CI byte-for-byte.

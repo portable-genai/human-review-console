@@ -1,4 +1,4 @@
-# On-prem migration (the sovereign-exit guide) - Hrz7
+# On-prem migration (the sovereign-exit guide) - `human-review-console`
 
 The reversibility proof for principle P-12. The domain cores (the review console and the
 case-workflow engine) are pure standard library and every external edge is a port, so moving the

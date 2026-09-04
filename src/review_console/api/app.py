@@ -1,4 +1,4 @@
-"""FastAPI application for the Hrz7 Human-Review & Maker-Checker Console.
+"""FastAPI application for the human-review-console Human-Review & Maker-Checker Console.
 
 Import-safe (the Container is built at request time, never at import). Identity is a
 server-verified Principal: the maker and the checker, their tenant and their groups all come from
@@ -201,7 +201,7 @@ def require_service_caller(request: Request) -> None:
 
 
 app = FastAPI(
-    title="Hrz7 Human-Review & Maker-Checker Console",
+    title="human-review-console Human-Review & Maker-Checker Console",
     version=__version__,
     description="Tenant-partitioned review queue, four-eyes / SoD routing, WORM sign-off. "
     "The system enforcer for principle P-06. Also hosts the case, clock & workflow "
@@ -414,7 +414,8 @@ def submit_review_service(request: ServiceSubmitRequest) -> ReviewItemModel:
     tenant are taken from the (trusted) request body. This is the endpoint the built producers
     submit their ``requires_human_review`` escalations to via ``review-kit``.
     """
-    # A producer may retry after its request reached Hrz7 but before it observed the response.
+    # A producer may retry after its request reached human-review-console but before it observed the
+    # response.
     # The store atomically returns the original item (including terminal state) rather than
     # creating a second review. Tenant is part of the unique key, preserving isolation.
     item = _console().submit_idempotent(

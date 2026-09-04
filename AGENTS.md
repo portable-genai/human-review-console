@@ -7,7 +7,7 @@ here. Read it first. This file carries only what is specific to this one.
 
 ## What this is
 
-Catalog id **Hrz7**. The shared destination for every requires_human_review escalation
+Catalog id `human-review-console`. The shared destination for every requires_human_review escalation
 the catalog raises: a tenant-partitioned review queue, four-eyes / segregation-of-duties
 routing, approve / reject / amend with a reason, and a WORM sign-off record proving who
 approved what and when.
@@ -16,7 +16,7 @@ approved what and when.
 
 | | |
 |---|---|
-| Catalog id | `Hrz7` |
+| Catalog id | `human-review-console` |
 | Package | `src/review_console/` |
 | Profile variable | `REVIEW_PROFILE` |
 | Adapter families | `gcp`, `local`, `onprem` |

@@ -1,4 +1,4 @@
-# human-review-console (Hrz7)
+# human-review-console (`human-review-console`)
 
 **Case, Workflow & Human-Review Platform.** One deployable service that pairs a tenant-partitioned
 human-review console (four-eyes / segregation-of-duties routing, approve / reject / amend with a
@@ -10,14 +10,14 @@ workflow that breaches or stalls escalates a case straight into the review queue
 The console half is the enforcer for principle **P-06** ("escalates softly to a human, never
 auto-executes"). Across the catalog that posture was asserted in many rows but had no system behind
 it: an escalation terminated in a per-repo boolean with no queue, no reviewer UI and no sign-off
-evidence. Hrz7 gives P-06 a real, auditable destination that serves every built vertical and every
+evidence. `human-review-console` gives P-06 a real, auditable destination that serves every built vertical and every
 planned one. The case half is the shared deterministic case spine workflow verticals inherit
 instead of rebuilding, so a regulatory-clock bug is fixed once, here, rather than in every vertical.
 
 The platform owns **no vertical policy**. Each consumer supplies its own routing (how many
 approvals an action needs, which segregation group a maker sits in) and its own workflow (states,
-transitions, clocks, escalation rules, as a `WorkflowDefinition`), exactly as Hrz1 the Guardrail
-Gateway owns no vertical prompt. What Hrz7 owns is the deterministic maker-checker decision, the
+transitions, clocks, escalation rules, as a `WorkflowDefinition`), exactly as `agent-guardrail-gateway` the Guardrail
+Gateway owns no vertical prompt. What `human-review-console` owns is the deterministic maker-checker decision, the
 case mechanics (is this transition legal, has this clock breached, is this case stuck, does this
 escalate), and the sign-off trail.
 
@@ -80,7 +80,7 @@ families selected by one env var, `REVIEW_PROFILE`:
 |---|---|---|
 | `local` | dev / tests / CI, selected explicitly (`REVIEW_PROFILE=local`); never the container default | SDK-free in-memory queue + case store + in-memory timers / events + hash-chained WORM log + seeded personas |
 | `gcp` | managed cloud | Firestore (tenant-partitioned) + Cloud Tasks timers + Pub/Sub events + Cloud Logging WORM sink + IAP identity (SDK imports lazy) |
-| `platform` | explicit deployment of the Hrz7 shared service | the same reviewed managed adapters as `gcp`; no delegation to another Hrz7 |
+| `platform` | explicit deployment of the `human-review-console` shared service | the same reviewed managed adapters as `gcp`; no delegation to another `human-review-console` |
 | `onprem` | portability proof | fail-fast placeholders that satisfy the ports; the client wires their own store / timers / events / sink / IdP |
 
 Ports (one row per port; the parity contract test and `ports/__init__.py` `__all__` are the

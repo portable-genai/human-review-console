@@ -1,4 +1,4 @@
-"""Behavioral parity at the Hrz7 profile seam.
+"""Behavioral parity at the human-review-console profile seam.
 
 Managed adapters need live cloud services for I/O, so the offline contract proves what can be
 proved without inventing integration state: the pure decision is profile-neutral, the local

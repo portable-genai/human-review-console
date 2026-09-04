@@ -222,7 +222,7 @@ export default function Page() {
               data-testid="review-source-key"
               style={{ fontSize: "0.75rem", color: "#555", overflowWrap: "anywhere" }}
             >
-              source: {selected.source_key.startsWith("doc1:") ? "Doc1" : "upstream service"} ·
+              source: {selected.source_key.startsWith("cdd-sow-research:") ? "cdd-sow-research" : "upstream service"} ·
               key: {selected.source_key}
             </p>
           )}

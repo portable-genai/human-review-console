@@ -1,4 +1,4 @@
-# Runbook - Hrz7 Human-Review & Maker-Checker Console
+# Runbook - `human-review-console` Human-Review & Maker-Checker Console
 
 Operating the console: deploy, observe, respond, roll back.
 
@@ -8,7 +8,7 @@ Operating the console: deploy, observe, respond, roll back.
   load-balancer ingress only, behind Cloud IAP.
 - Store: Firestore native (per-tenant collection path, CMEK, delete-protected).
 - Sign-off sink: Cloud Logging locked WORM bucket (`review-console-signoff`, 7-year retention).
-- Identity: exact-audience IAP verification followed by the reviewed Hrz3 subject map in
+- Identity: exact-audience IAP verification followed by the reviewed `agent-registry` subject map in
   `REVIEW_IAP_ENTITLEMENTS_JSON` (`REVIEW_PROFILE=gcp`).
 
 ## Deploy
@@ -105,6 +105,6 @@ ignores unknown fields), so a rollback of the service never invalidates existing
 - **IAP misconfigured:** identity resolution raises and every guarded route returns 401. No request
   proceeds without a verified principal.
 - **Entitlement map missing or stale:** a verified but unmapped subject receives 401. Update the
-  reviewed Hrz3 export; never infer approver groups from an email domain or browser field.
+  reviewed `agent-registry` export; never infer approver groups from an email domain or browser field.
 - **S2S secret rotation:** update `REVIEW_S2S_TOKEN` (or the allowed-callers audience) on the
   service; the S2S endpoint fails closed until the caller presents a valid token.

@@ -1,22 +1,20 @@
 #!/usr/bin/env python3
-"""Evaluation gate for the Hrz7 Human-Review & Maker-Checker Console.
+"""Evaluation gate for the human-review-console Human-Review & Maker-Checker Console.
 
 Two named layers via ``--mode`` (the scaffold is ``agent_eval_kit.eval_main``):
 
 * **smoke** (default) - the offline pre-merge check CI runs on every change. It drives the real
   ``ConsoleService`` (maker-checker) and the real ``CaseWorkflowService`` against two golden sets
-  with SDK-free local adapters, and scores both sides in ONE report:
-    - ``four_eyes_integrity``: the deterministic engine allows every legitimate disposition and
-      DENIES every self-approval / cross-tenant / missing-role / SoD / duplicate one. This is the
-      safety metric, so its threshold is 0.99.
-    - ``pii_safety``: no raw identifier from a review summary or reviewer reason survives into a
-      sign-off audit record.
-    - ``clock_accuracy``: the case business-day deadline maths matches the hand-computed golden
-      (remaining days and the breach flag). Safety metric, so its threshold is 0.99.
-    - ``escalation_accuracy``: the case findings and the escalation decision match expectation.
-    - ``case_pii_safety``: no raw identifier from a case attribute survives into an audit record.
-* **gate** - the promotion verdict from the shared Hrz4 authority (requires the platform / gcp
-  profile), via ``agent_eval_kit.PromotionGateClient``.
+  with SDK-free local adapters, and scores both sides in ONE report: - ``four_eyes_integrity``: the
+  deterministic engine allows every legitimate disposition and DENIES every self-approval /
+  cross-tenant / missing-role / SoD / duplicate one. This is the safety metric, so its threshold is
+  0.99. - ``pii_safety``: no raw identifier from a review summary or reviewer reason survives into a
+  sign-off audit record. - ``clock_accuracy``: the case business-day deadline maths matches the
+  hand-computed golden (remaining days and the breach flag). Safety metric, so its threshold is
+  0.99. - ``escalation_accuracy``: the case findings and the escalation decision match expectation.
+  - ``case_pii_safety``: no raw identifier from a case attribute survives into an audit record. *
+  **gate** - the promotion verdict from the shared model-quality-gate authority (requires the
+  platform / gcp profile), via ``agent_eval_kit.PromotionGateClient``.
 
 Exit is ``0`` iff every metric meets its threshold (and, in gate mode, the authority agrees).
 """
@@ -53,7 +51,7 @@ THRESHOLDS: dict[str, float] = {
     "escalation_accuracy": 0.90,
     "case_pii_safety": 0.99,
 }
-#: The registered Hrz4 metric bundle for this platform (Hrz4 owns the metrics + thresholds).
+#: The registered model-quality-gate metric bundle for this platform (model-quality-gate owns the metrics + thresholds).
 _BUNDLE = "human-review-console"
 
 
@@ -238,6 +236,6 @@ if __name__ == "__main__":
             smoke=run_smoke,
             gate=run_gate,
             default_dataset=DEFAULT_DATASET,
-            description="Offline / Hrz4 evaluation gate for Hrz7 (human-review console).",
+            description="Offline / model-quality-gate for human-review-console (human-review console).",
         )
     )
