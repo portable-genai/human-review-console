@@ -134,8 +134,8 @@ Prerequisites: a project with the APIs in `infra/terraform/apis.tf`, and `terraf
 `infra/terraform` (fill in `terraform.tfvars` from the example). The service deploys behind an
 internal load balancer with Cloud IAP, Firestore (CMEK) as the store (one `(default)` database with
 `reviews` and `cases` subcollections per tenant), the Cloud Tasks queue for case deadline timers,
-the Pub/Sub topic for case lifecycle events, and the Cloud Logging locked WORM bucket as the shared
-sign-off / audit sink.
+the Pub/Sub topic for case lifecycle events, and the Cloud Logging WORM bucket (locked when the
+deployment states `worm_locked = true`) as the shared sign-off / audit sink.
 
 ```bash
 gcloud run services describe human-review-console --region asia-southeast1

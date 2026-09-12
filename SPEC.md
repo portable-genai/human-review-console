@@ -66,8 +66,8 @@ reads directly, not by setting a secret.
 | Profile | Stores | Timers | Events | Audit sink | Identity | Cloud SDK |
 |---|---|---|---|---|---|---|
 | `local` | durable SQLite review queue plus in-memory case store | in-memory register | in-memory list | hash-chained WORM log (hex-service-kit) | seeded dev personas | none |
-| `gcp` | Firestore native (per-tenant path, CMEK) | Cloud Tasks | Pub/Sub | Cloud Logging locked WORM bucket | IAP signed assertion | lazy |
-| `platform` | explicit `human-review-console` managed binding, same adapters as `gcp` | Cloud Tasks | Pub/Sub | Cloud Logging locked WORM bucket | IAP signed assertion | lazy |
+| `gcp` | Firestore native (per-tenant path, CMEK) | Cloud Tasks | Pub/Sub | Cloud Logging WORM bucket (locked when the deployment states `worm_locked = true`) | IAP signed assertion | lazy |
+| `platform` | explicit `human-review-console` managed binding, same adapters as `gcp` | Cloud Tasks | Pub/Sub | Cloud Logging WORM bucket (same lock decision) | IAP signed assertion | lazy |
 | `onprem` | fail-fast placeholder | fail-fast | fail-fast | fail-fast placeholder | fail-fast placeholder | none |
 
 Any other profile value is rejected. Identity uses its own exact profile map, so a channel or
@@ -181,7 +181,8 @@ Both halves share one WORM sink. Every disposition attempt, allowed or denied, w
 `CaseAuditEvent`. Each event is already redacted (reasons, summaries, case attributes run through
 the shared `pii-kit` before the write) and carries no raw identifiers, only the decision, the
 actors, the state and the citations. The local log is hash-chained and verifiable; the gcp sink is
-a locked retention bucket.
+a retention bucket whose lock has no default: a production deployment locks it, the reference
+deployment declines the lock and says so.
 
 ## 10. The hard gate
 

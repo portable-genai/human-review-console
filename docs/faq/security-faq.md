@@ -20,7 +20,7 @@ documented future hardening layer.
 ### Where does immutable audit live?
 
 The local profile writes an append-only hash chain through `hex-service-kit`. Production writes
-to the locked WORM sink owned operationally by `agent-observability`. The local chain is useful tamper evidence,
+to the WORM sink owned operationally by `agent-observability`, which a production deployment locks. The local chain is useful tamper evidence,
 but it is not a replacement for external anchoring and locked retention.
 
 ### Are secrets committed?

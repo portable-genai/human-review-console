@@ -7,7 +7,9 @@ Operating the console: deploy, observe, respond, roll back.
 - Cloud Run v2 service `human-review-console`, region `asia-southeast1`, internal +
   load-balancer ingress only, behind Cloud IAP.
 - Store: Firestore native (per-tenant collection path, CMEK, delete-protected).
-- Sign-off sink: Cloud Logging locked WORM bucket (`review-console-signoff`, 7-year retention).
+- Sign-off sink: Cloud Logging WORM bucket (`review-console-signoff`). `worm_locked` has no default:
+  a production deployment locks it at 2557 days (~7 years, irreversible); a reference deployment
+  declines the lock in its tfvars and says why.
 - Identity: exact-audience IAP verification followed by the reviewed `agent-registry` subject map in
   `REVIEW_IAP_ENTITLEMENTS_JSON` (`REVIEW_PROFILE=gcp`).
 
@@ -16,7 +18,9 @@ Operating the console: deploy, observe, respond, roll back.
 ```bash
 cd infra/terraform
 cp terraform.tfvars.example terraform.tfvars   # set project_id + digest-pinned image
-terraform init && terraform plan               # rejects an out-of-region value
+# Decide worm_locked BEFORE the first apply: it has no default and the plan refuses without it.
+# true is IRREVERSIBLE for retention_days (2557 by default, the floor binds only when locked).
+terraform init && terraform plan               # rejects an out-of-region value or a missing lock decision
 terraform apply
 ```
 
