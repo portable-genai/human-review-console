@@ -10,8 +10,12 @@ key set. The only additive infra the case side needs is a Cloud Tasks queue (dea
 Pub/Sub topic (lifecycle events); case state lives in the same Firestore `(default)` database as the
 review queue, partitioned by tenant.
 
-Only `project_id` and `container_image` are required inputs; residency is pinned in `locals.tf`
-and validated in `variables.tf`, so a plan is rejected if a deploy would place data out of country.
+`project_id`, `container_image`, the IAP inputs and `worm_locked` are the required inputs; residency
+is pinned in `locals.tf` and validated in `variables.tf`, so a plan is rejected if a deploy would
+place data out of country. `worm_locked` has no default on purpose: the sign-off bucket's lock is
+irreversible, so a plan refuses until the deployment states it. A production deployment sets
+`worm_locked = true` with `retention_days = 2557` (the ~7-year floor binds only when locked); a
+reference or evaluation deployment sets `worm_locked = false` with its reason and stays destroyable.
 
 | File | Control |
 |---|---|
@@ -19,7 +23,7 @@ and validated in `variables.tf`, so a plan is rejected if a deploy would place d
 | `kms.tf` | one regional CMEK key, per-service IAM bindings (Firestore, WORM bucket, Cloud Run) |
 | `firestore.tf` | single `(default)` store, tenant-partitioned (reviews + cases subcollections), in-region, CMEK, delete-protected |
 | `tasks_events.tf` | Cloud Tasks queue (case deadline timers) + Pub/Sub topic (case-lifecycle events), in-region |
-| `logging_worm.tf` | locked retention bucket + sink for the sign-off trail (immutable, 7 years) |
+| `logging_worm.tf` | retention bucket + sink for the sign-off trail; `worm_locked` has no default, a production deployment locks it (immutable, ~7 years), the reference deployment declines the lock and says so |
 | `iam.tf` | least-privilege runtime SA + Cloud Tasks OIDC invoker SA (no exported keys) |
 | `cloud_run.tf` | one internal-only service (8087), CMEK revision, `REVIEW_PROFILE=gcp` opt-in, exact IAP audience plus reviewed `agent-registry` entitlements, `REVIEW_*` case env, `/healthz` probes |
 | `apis.tf` | enables only the managed services this stack uses (incl. cloudtasks + pubsub) |

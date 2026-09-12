@@ -1,4 +1,8 @@
-"""GCP AuditSinkPort: Cloud Logging locked WORM bucket for sign-off events (SDK imports lazy)."""
+"""GCP AuditSinkPort: Cloud Logging WORM bucket for sign-off events (SDK imports lazy).
+
+The bucket is locked when the deployment states ``worm_locked = true`` (``infra/terraform``);
+the variable has no default, so the lock is always a stated decision.
+"""
 
 from __future__ import annotations
 

@@ -14,8 +14,13 @@ output "cmek_key" {
 }
 
 output "signoff_log_bucket" {
-  description = "The locked WORM bucket holding the sign-off trail."
+  description = "The WORM bucket holding the sign-off trail (locked when worm_locked = true)."
   value       = google_logging_project_bucket_config.signoff.bucket_id
+}
+
+output "worm_locked" {
+  description = "Whether the sign-off bucket is irreversibly locked for the retention window. true is the compliant production posture."
+  value       = var.worm_locked
 }
 
 output "deadlines_queue" {

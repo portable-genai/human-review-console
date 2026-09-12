@@ -14,7 +14,7 @@ is fixed and the contract test proves parity.
 | `CaseStorePort` | Firestore (per-tenant path, CMEK) | the same store, keyed by `(tenant, case_id)` and holding the case state plus its transition history. |
 | `TimerPort` | Cloud Tasks (case deadline timers) | any deferred-callback mechanism: a durable job queue or scheduler that fires a deadline callback per clock. |
 | `EventPublisherPort` | Pub/Sub (case lifecycle events) | any message bus, or a no-op sink if the client does not consume lifecycle events. |
-| `AuditSinkPort` | Cloud Logging locked WORM bucket | the client's own append-only / WORM store (a retention-locked object store, or the shared hash-chained log persisted to disk). Shared by both halves. |
+| `AuditSinkPort` | Cloud Logging WORM bucket (locked in production) | the client's own append-only / WORM store (a retention-locked object store, or the shared hash-chained log persisted to disk). Shared by both halves. |
 | `IdentityPort` (commons) | IAP-signed assertion | the client's OIDC / SAML IdP: verify the token, map it to a `Principal` (subject, tenant, groups). |
 
 The identity replacement carries one extra obligation, and it is what lets the deployment serve

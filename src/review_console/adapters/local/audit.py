@@ -9,7 +9,7 @@ that only an out-of-band anchored head can expose.
 Tamper classes NOT detected: an attacker with write access to BOTH the database and the anchor
 file can rewrite both consistently (the chain carries no secret). That is why the anchor should
 live on a different volume or in a different trust domain (``REVIEW_AUDIT_ANCHOR_PATH``), and why
-managed profiles use a locked Cloud Logging WORM bucket instead of this stand-in.
+managed profiles use a Cloud Logging WORM bucket instead of this stand-in, locked in production.
 """
 
 from __future__ import annotations

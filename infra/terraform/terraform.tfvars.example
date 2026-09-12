@@ -19,6 +19,14 @@ JSON
 # frame_ancestors = "'self' https://host-app.example.com"
 # region          = "asia-southeast1"
 
+# WORM sign-off lock (rule R2). NO default: every deployment names it, because an irreversible
+# control must never arrive because a file said nothing. true is the compliant production posture
+# shown here and is IRREVERSIBLE for the retention window; the ~7-year floor below binds only when
+# locked. A reference or evaluation stack states worm_locked = false with its reason and may keep
+# a short retention_days; the bucket then stays destroyable and is NOT WORM.
+worm_locked    = true
+retention_days = 2557
+
 # VPC Service Controls. Roll out dry-run first: apply with vpc_sc_enforce = false, watch the
 # hrz_review_console_vpc_sc_violation alert, add every operator and CI identity below, then set
 # vpc_sc_enforce = true. Set enable_vpc_sc = false only for a project-scoped deploy with no org
