@@ -39,7 +39,7 @@ locals {
 }
 
 resource "google_logging_metric" "security" {
-  for_each = local.security_metrics
+  for_each = var.posture_alerts_enabled ? local.security_metrics : {}
 
   project     = var.project_id
   name        = "${local.metric_prefix}_${each.key}"
@@ -56,7 +56,7 @@ resource "google_logging_metric" "security" {
 }
 
 resource "google_monitoring_alert_policy" "security" {
-  for_each = local.security_metrics
+  for_each = var.posture_alerts_enabled ? local.security_metrics : {}
 
   project      = var.project_id
   display_name = "human-review-console security: ${each.key}"
