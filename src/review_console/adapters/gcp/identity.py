@@ -4,6 +4,15 @@ The verified principal's ``tenant`` (the IAP ``hd`` hosted-domain claim) and gro
 become the console's tenant partition and approver entitlement, so the four-eyes / SoD checks run
 against a real, server-verified identity in production exactly as they do against a persona
 locally.
+
+The assertion is read under BOTH names it can arrive under, and for this console that is not a
+hypothetical. ``x-goog-*`` is Google's reserved namespace and the serverless frontend strips it
+from a request entering a service, so the portal that MOUNTS this console cannot forward the
+assertion its own edge was handed under the standard name; it sends the same value as
+``x-portal-iap-assertion`` too. Reading the reserved name alone would answer 401 to every
+authenticated approver the day this console is embedded -- with a green gate, a healthy-looking
+page, and a passing offline suite, because the console's first calls need no identity at all.
+Both names take the identical verification path: the header is TRANSPORT and vouches for nothing.
 """
 
 from __future__ import annotations
@@ -12,7 +21,13 @@ import json
 from typing import Any
 
 from hex_service_kit.assertion import require_claims, require_pinned_algorithm
-from hex_service_kit.federation import IAP_ASSERTION_HEADER, IAP_ISSUER, IAP_KEYS_URL
+from hex_service_kit.federation import (
+    IAP_ASSERTION_HEADER,
+    IAP_ISSUER,
+    IAP_KEYS_URL,
+    PORTAL_ASSERTION_HEADER,
+    select_assertion,
+)
 from hex_service_kit.identity import IdentityError, Principal, RequestContext
 
 from ...config import Settings
@@ -27,6 +42,11 @@ from ...ports.identity import VERIFIED
 #: ``verify_token`` does not check the issuer at all (``verify_oauth2_token`` is the wrapper
 #: that does), so this adapter checks it itself against the kit's value.
 _IAP_ASSERTION_HEADER = IAP_ASSERTION_HEADER
+
+#: The SAME assertion under a name the platform does NOT reserve, which is the only name the
+#: embedding portal can forward it under. A fallback for TRANSPORT and never a second trust path:
+#: what arrives under it is verified identically, so a caller gains nothing by choosing it.
+_PORTAL_ASSERTION_HEADER = PORTAL_ASSERTION_HEADER
 _IAP_KEYS_URL = IAP_KEYS_URL
 _IAP_ISSUER = IAP_ISSUER
 
@@ -70,9 +90,28 @@ class IapIdentityAdapter:
         return value
 
     def resolve(self, ctx: RequestContext) -> Principal:
-        assertion = ctx.header(_IAP_ASSERTION_HEADER)
-        if not assertion:
-            raise IdentityError("missing IAP assertion header; request did not pass through IAP")
+        # ONE selection function, in the commons, rather than another copy of an `or` chain. It
+        # examines BOTH names an assertion travels under, prefers the edge-injected one, and
+        # strips, so a header the portal rendered blank is ABSENT rather than an assertion: a
+        # whitespace-only value is truthy, and unstripped it would skip this refusal and be
+        # refused further down by the algorithm pin, which reports a malformed token for what is
+        # actually a missing one.
+        #
+        # The keys are lower-cased here rather than assumed. ``RequestContext`` documents them as
+        # lower-cased and the web layer supplies them that way, but this is a dictionary lookup
+        # rather than ``ctx.header``, and an identity that goes missing because of header CASE is
+        # the same class of silent refusal this line exists to end.
+        try:
+            source = select_assertion({k.lower(): v for k, v in ctx.headers.items()})
+        except IdentityError as exc:
+            # This console's own sentence, kept so the refusal reads as it always has, with the
+            # commons reason appended because that reason names BOTH headers it examined. An
+            # operator who reads only "missing IAP assertion header" goes to the load balancer;
+            # the one who reads which two names were looked for goes to the hop that dropped one.
+            raise IdentityError(
+                f"missing IAP assertion header; request did not pass through IAP: {exc}"
+            ) from exc
+        assertion = source.assertion
         if not self._audience:
             raise IdentityError(
                 "REVIEW_IAP_AUDIENCE is not configured; cannot verify IAP assertion"
