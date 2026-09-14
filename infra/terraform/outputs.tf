@@ -10,7 +10,7 @@ output "runtime_service_account" {
 
 output "cmek_key" {
   description = "The regional CMEK key protecting the store, logs, and revision."
-  value       = google_kms_crypto_key.review.id
+  value       = one(google_kms_crypto_key.review[*].id)
 }
 
 output "signoff_log_bucket" {
