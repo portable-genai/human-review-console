@@ -9,7 +9,7 @@ resource "google_cloud_run_v2_service" "review" {
 
   template {
     service_account                  = google_service_account.runtime.email
-    encryption_key                   = google_kms_crypto_key.review.id
+    encryption_key                   = one(google_kms_crypto_key.review[*].id)
     max_instance_request_concurrency = 40
 
     scaling {

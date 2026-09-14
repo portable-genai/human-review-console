@@ -8,8 +8,11 @@ resource "google_firestore_database" "review" {
   location_id = local.region
   type        = "FIRESTORE_NATIVE"
 
-  cmek_config {
-    kms_key_name = google_kms_crypto_key.review.id
+  dynamic "cmek_config" {
+    for_each = var.cmek_enabled ? [1] : []
+    content {
+      kms_key_name = one(google_kms_crypto_key.review[*].id)
+    }
   }
 
   delete_protection_state = "DELETE_PROTECTION_ENABLED"
