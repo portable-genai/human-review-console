@@ -95,12 +95,89 @@ _BINDINGS: dict[str, dict[str, str]] = {
     },
 }
 
+_IAP_IDENTITY_TARGET = "review_console.adapters.gcp.identity:IapIdentityAdapter"
+
 _IDENTITY_BINDINGS: dict[str, str] = {
     "local": "review_console.adapters.local.identity:LocalIdentityAdapter",
-    "gcp": "review_console.adapters.gcp.identity:IapIdentityAdapter",
-    "platform": "review_console.adapters.gcp.identity:IapIdentityAdapter",
+    "gcp": _IAP_IDENTITY_TARGET,
+    "platform": _IAP_IDENTITY_TARGET,
     "onprem": "review_console.adapters.onprem.identity:OnPremIdentityAdapter",
 }
+
+#: The profiles served behind an Identity-Aware Proxy edge, read off the identity binding rather
+#: than listed a second time: a profile is behind IAP exactly when its identity port verifies an
+#: IAP assertion. Under these profiles a SERVICE caller is authenticated from the forwarded IAP
+#: assertion too, never from ``Authorization`` (see :func:`iap_service_callers`).
+IAP_EDGE_PROFILES: frozenset[str] = frozenset(
+    profile for profile, target in _IDENTITY_BINDINGS.items() if target == _IAP_IDENTITY_TARGET
+)
+
+#: The reviewed MACHINE callers admitted to the service intake behind the IAP edge.
+IAP_SERVICE_CALLERS_ENV = "REVIEW_IAP_SERVICE_CALLERS_JSON"
+
+#: Every address in the machine-caller allowlist must be a service account. A human address in
+#: it would let that person submit a maker and tenant of their choosing through the service
+#: intake, which is the forgery the allowlist exists to refuse.
+_SERVICE_ACCOUNT_SUFFIX = ".gserviceaccount.com"
+
+
+def iap_service_callers(environ: Mapping[str, str] | None = None) -> frozenset[str]:
+    """``REVIEW_IAP_SERVICE_CALLERS_JSON`` in its three states, resolved at BOOT.
+
+    Behind the IAP edge the portal REPLACES ``Authorization`` with its own service token on
+    every request it forwards, browser requests included, so a bearer says nothing about who
+    called. The caller is the principal named in the forwarded IAP assertion, and this is the
+    reviewed list of machine callers whose assertion may submit to the service intake.
+
+    * unset: no machine caller is admitted, so the IAP path refuses every caller. That is the
+      right default for a deployment that serves reviewers only.
+    * set to an empty value: refused, because an emptied allowlist names nothing and would
+      otherwise read as configured.
+    * set: must be a non-empty JSON array of service-account email addresses, each named
+      exactly (no blank, no wildcard, nothing that is not a ``*.gserviceaccount.com``
+      address). Anything else is refused.
+
+    Raised at import of ``api/app.py``, so a malformed allowlist stops the process rather than
+    surfacing as a 403 on the first hand-off.
+    """
+    if environ is None:
+        setting = read_env_setting(IAP_SERVICE_CALLERS_ENV)
+    else:
+        raw = environ.get(IAP_SERVICE_CALLERS_ENV)
+        setting = EnvSetting(
+            name=IAP_SERVICE_CALLERS_ENV, raw=raw, value="" if raw is None else raw.strip()
+        )
+    if setting.is_configured_empty:
+        raise ConfiguredEmptyError(
+            f"{IAP_SERVICE_CALLERS_ENV} is set to an empty value, which names no caller. Unset "
+            "it to admit no machine caller behind the IAP edge, or set it to a JSON array of "
+            "service-account emails."
+        )
+    if setting.is_unset:
+        return frozenset()
+    try:
+        parsed = json.loads(setting.value)
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            f"{IAP_SERVICE_CALLERS_ENV} is not valid JSON; it must be a JSON array of "
+            "service-account emails"
+        ) from exc
+    if not isinstance(parsed, list) or not parsed:
+        raise ValueError(
+            f"{IAP_SERVICE_CALLERS_ENV} must be a non-empty JSON array of service-account "
+            "emails; unset it to admit no machine caller"
+        )
+    callers: set[str] = set()
+    for entry in parsed:
+        address = entry.strip().lower() if isinstance(entry, str) else ""
+        if not address or "*" in address or not address.endswith(_SERVICE_ACCOUNT_SUFFIX):
+            raise ValueError(
+                f"{IAP_SERVICE_CALLERS_ENV} contains {entry!r}; every entry must be one exact "
+                f"service-account email ending {_SERVICE_ACCOUNT_SUFFIX}, because a person or a "
+                "pattern in this list could submit a forged maker and tenant"
+            )
+        callers.add(address)
+    return frozenset(callers)
 
 
 def _validate_profile(profile: str) -> str:

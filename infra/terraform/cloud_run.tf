@@ -39,6 +39,15 @@ resource "google_cloud_run_v2_service" "review" {
         name  = "REVIEW_IAP_ENTITLEMENTS_JSON"
         value = var.iap_entitlements_json
       }
+      # Unset (no env entry) when the list is empty: the console then admits no machine caller.
+      # An EMPTY value would refuse to boot, so an empty list must never render as "".
+      dynamic "env" {
+        for_each = length(var.iap_service_callers) > 0 ? [jsonencode(var.iap_service_callers)] : []
+        content {
+          name  = "REVIEW_IAP_SERVICE_CALLERS_JSON"
+          value = env.value
+        }
+      }
       env {
         name  = "PORT"
         value = "8087"

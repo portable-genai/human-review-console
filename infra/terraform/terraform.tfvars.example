@@ -16,6 +16,10 @@ iap_entitlements_json = <<JSON
 }
 JSON
 
+# Producers' runtime service accounts that may hand reviews off through the portal's IAP edge
+# (REVIEW_IAP_SERVICE_CALLERS_JSON). Leave unset to admit none. Service accounts only, never people.
+# iap_service_callers = ["aml-alert-triage@your-gcp-project.iam.gserviceaccount.com"]
+
 # frame_ancestors = "'self' https://host-app.example.com"
 # region          = "asia-southeast1"
 
