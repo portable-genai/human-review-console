@@ -147,6 +147,15 @@ then exist in the reviewed `REVIEW_IAP_ENTITLEMENTS_JSON` `agent-registry` expor
 expected hosted domain, and principals. A missing mapping, domain mismatch, or absent
 `group:approver` fails closed; no entitlement is inferred from browser input or email domain.
 
+The service intake (`POST /v1/service/reviews`, and `POST /v1/audit/ping`) takes the maker and
+tenant from the body, so under `gcp` and `platform` it authenticates the ORIGINAL caller from the
+IAP assertion the portal forwards, verified on the same path, and admits only the service
+accounts in `REVIEW_IAP_SERVICE_CALLERS_JSON` (unset admits none; empty or malformed refuses to
+boot). It never reads `Authorization` there: the portal replaces it with its own token on every
+request, a reviewer's browser requests included. No assertion or one that does not verify is
+401; a verified caller the list does not name, any human included, is 403. Under `local` and
+`onprem` the shared-secret `REVIEW_S2S_TOKEN` path is unchanged.
+
 ## 8. HTTP contract
 
 The review routes are the frozen surface external consumers pin; the case and workflow routes are
@@ -155,7 +164,7 @@ additive.
 | Method | Path | Auth | Body | Returns |
 |---|---|---|---|---|
 | `POST` | `/v1/reviews` | principal | action, subject, summary, severity, required_approvals, sod_group, case_ref, citations | 201 `ReviewItem` |
-| `POST` | `/v1/service/reviews` | S2S | the above + maker, tenant | 201 `ReviewItem` (the rule-R8 producer intake: a trusted service asserts maker + tenant) |
+| `POST` | `/v1/service/reviews` | S2S (IAP machine caller under gcp/platform) | the above + maker, tenant | 201 `ReviewItem` (the rule-R8 producer intake: a trusted service asserts maker + tenant) |
 | `GET` | `/v1/reviews` | principal | - | 200 `[ReviewItem]` (pending, caller's tenant) |
 | `GET` | `/v1/reviews/{id}` | principal | - | 200 `ReviewItem` / 404 |
 | `POST` | `/v1/reviews/{id}/decision` | principal | disposition, reason, amendments | 200 allowed / 403 denied (with findings) / 404 / 409 |
@@ -165,7 +174,7 @@ additive.
 | `POST` | `/v1/cases/{id}/transition` | principal | to_state, reason | 200 `Case` / 409 illegal / 404 |
 | `POST` | `/v1/cases/{id}/evaluate` | principal | - | 200 `Assessment` (deadlines, findings, escalation) |
 | `GET` | `/v1/workflows` | open | - | 200 registered definitions |
-| `POST` | `/v1/audit/ping` | S2S | - | 200 |
+| `POST` | `/v1/audit/ping` | S2S (IAP machine caller under gcp/platform) | - | 200 |
 | `GET` | `/healthz` | open | - | 200 status/profile/region |
 | `GET` | `/v1/personas` | open | - | 200 personas (empty outside local) |
 

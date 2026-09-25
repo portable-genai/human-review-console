@@ -60,11 +60,14 @@ from hex_service_kit.web import (
 
 from .. import __version__
 from ..config import (
+    IAP_EDGE_PROFILES,
+    IAP_SERVICE_CALLERS_ENV,
     Container,
     ProfileChoice,
     Settings,
     build_container,
     end_user_auth_kind,
+    iap_service_callers,
     resolve_profile,
 )
 from ..domain.cases.sample_workflows import SAMPLE_DEFINITIONS
@@ -76,7 +79,7 @@ from ..domain.cases.workflow_service import (
 )
 from ..domain.console_service import AlreadyResolved, ConsoleService, ReviewNotFound
 from ..domain.kernel import Citation
-from ..ports.identity import VERIFIED, EndUserAuthUnavailableError
+from ..ports.identity import VERIFIED, AudienceUnconfiguredError, EndUserAuthUnavailableError
 from .schemas import (
     AssessmentModel,
     CaseModel,
@@ -93,6 +96,9 @@ from .schemas import (
 )
 
 _CHOICE = resolve_profile()
+# Resolved at BOOT, so an emptied or malformed machine-caller allowlist stops the process rather
+# than surfacing as a 403 on the first hand-off (see ``config.iap_service_callers``).
+_IAP_SERVICE_CALLERS = iap_service_callers()
 # The workflow registry a deployment overrides per vertical; the platform ships a sample.
 _DEFINITIONS = SAMPLE_DEFINITIONS
 
@@ -164,11 +170,84 @@ def _request_choice(request: Request) -> ProfileChoice:
     return choice if isinstance(choice, ProfileChoice) else _CHOICE
 
 
+def _request_service_callers(request: Request) -> frozenset[str]:
+    callers = getattr(request.app.state, "iap_service_callers", None)
+    return callers if isinstance(callers, frozenset) else _IAP_SERVICE_CALLERS
+
+
+def _require_iap_machine_caller(request: Request) -> str:
+    """Authenticate the ORIGINAL caller behind the IAP edge, from its forwarded assertion.
+
+    Behind the portal's edge the portal REPLACES ``Authorization`` with its own service token
+    on every request it forwards, a signed-in reviewer's browser requests included. A bearer
+    therefore identifies the portal and nobody else, and accepting it here would let any
+    reviewer POST a maker and tenant of their choosing into the queue. ``Authorization`` is not
+    read on this path at all. The caller is the principal the IAP assertion names, verified on
+    the identity adapter's own path (audience ``REVIEW_IAP_AUDIENCE``, algorithm pin, signature,
+    issuer, required claims), and it must be a reviewed machine caller named in
+    ``REVIEW_IAP_SERVICE_CALLERS_JSON``.
+
+    503: the deployment cannot verify anyone (no audience, or no IAP adapter bound). 401: no
+    assertion, or one that does not verify. 403: a verified caller the allowlist does not name,
+    which includes every human.
+    """
+    try:
+        identity = _identity()
+    except EndUserAuthUnavailableError as exc:
+        raise HTTPException(status_code=exc.http_status, detail=str(exc)) from exc
+    except IdentityError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"the IAP identity adapter could not be constructed: {exc}",
+        ) from exc
+    verify = getattr(identity, "verify_service_assertion", None)
+    if not callable(verify):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "the bound identity adapter cannot verify an IAP assertion, so no service "
+                "caller can be authenticated behind the IAP edge"
+            ),
+        )
+    ctx = RequestContext(headers={k.lower(): v for k, v in request.headers.items()})
+    try:
+        caller = str(verify(ctx))
+    except AudienceUnconfiguredError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
+        ) from exc
+    except IdentityError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=(
+                "a verified IAP assertion naming the calling service is required; the "
+                f"Authorization header is not read behind the IAP edge: {exc}"
+            ),
+        ) from exc
+    allowed = _request_service_callers(request)
+    if caller not in allowed:
+        why = (
+            "which is unset, so no machine caller is admitted"
+            if not allowed
+            else "which does not name it"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                f"verified IAP caller {caller!r} is not a reviewed machine caller: service "
+                f"submissions behind the IAP edge are admitted only for the service accounts "
+                f"in {IAP_SERVICE_CALLERS_ENV}, {why}"
+            ),
+        )
+    return caller
+
+
 def require_service_caller(request: Request) -> None:
     """Authenticate the calling SERVICE, refusing to decide at all without a chosen profile.
 
-    The commons dependency picks its scheme from the profile string: a Google-signed OIDC ID
-    token under a secure profile, the shared-secret bearer otherwise. The shared-secret path
+    Behind the IAP edge (``gcp``, ``platform``) the caller is authenticated from the forwarded
+    IAP assertion, as the last paragraph explains. Everywhere else the commons dependency takes
+    the shared-secret bearer. The shared-secret path
     stays OPEN when ``REVIEW_S2S_TOKEN`` is unset (loopback dev with zero secrets), so an
     UNSET ``REVIEW_PROFILE`` must never be allowed to select it: that combination let an
     unauthenticated caller POST a forged maker and tenant into the maker-checker queue. When
@@ -188,8 +267,16 @@ def require_service_caller(request: Request) -> None:
     seeded-persona demo posture, not a reason to accept LAN callers. Choose a profile whose
     identity adapter verifies an assertion for that, or opt in with
     ``REVIEW_ALLOW_INSECURE_DEMO=1``.
+
+    Under a profile served behind the IAP edge (``gcp``, ``platform``) no bearer scheme is
+    consulted, the commons' Google-signed OIDC one included: the portal in front replaces
+    ``Authorization`` with its OWN token on every request, a reviewer's browser requests too, so
+    a bearer names the portal and nobody else. The original caller is read from the forwarded
+    IAP assertion instead (:func:`_require_iap_machine_caller`). The shared-secret path above is
+    unchanged for ``local`` and ``onprem``.
     """
-    if not _request_choice(request).service_auth_configured:
+    choice = _request_choice(request)
+    if not choice.service_auth_configured:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=(
@@ -197,6 +284,9 @@ def require_service_caller(request: Request) -> None:
                 "so no authentication scheme has been chosen"
             ),
         )
+    if choice.profile in IAP_EDGE_PROFILES:
+        _require_iap_machine_caller(request)
+        return
     _authenticate_service_caller(request)
 
 
@@ -209,6 +299,7 @@ app = FastAPI(
     "asia-southeast1.",
 )
 app.state.profile_choice = _CHOICE
+app.state.iap_service_callers = _IAP_SERVICE_CALLERS
 app.state.profile = _CHOICE.profile
 
 # Every relaxation below keys off ``exposure_profile``, never the raw profile: an unset

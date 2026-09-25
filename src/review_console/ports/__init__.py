@@ -20,6 +20,7 @@ from .identity import (
     END_USER_AUTH_KINDS,
     UNIMPLEMENTED,
     VERIFIED,
+    AudienceUnconfiguredError,
     EndUserAuthUnavailableError,
     declared_end_user_auth,
 )
@@ -33,6 +34,7 @@ __all__ = [
     "END_USER_AUTH_KINDS",
     "UNIMPLEMENTED",
     "VERIFIED",
+    "AudienceUnconfiguredError",
     "AuditSinkPort",
     "CaseStorePort",
     "EndUserAuthUnavailableError",

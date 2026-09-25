@@ -113,6 +113,7 @@ reads the variable now.
 | `REVIEW_FRAME_ANCESTORS` | API | CSP frame-ancestors for API responses |
 | `REVIEW_IAP_AUDIENCE` | API | IAP audience to verify (gcp) |
 | `REVIEW_IAP_ENTITLEMENTS_JSON` | API | reviewed `agent-registry` subject map to tenant, hosted domain, and principals |
+| `REVIEW_IAP_SERVICE_CALLERS_JSON` | API | JSON array of the producers' service-account emails admitted to the service intake behind the IAP edge (gcp/platform); unset admits none, empty or malformed refuses to boot |
 | `NEXT_PUBLIC_REVIEW_API_URL` | UI | the API base URL the browser calls |
 | `NEXT_PUBLIC_BASE_PATH` | UI | mount sub-path for same-origin embedding |
 | `NEXT_PUBLIC_EMBED` | UI | `1` to drop page chrome (host owns it) |

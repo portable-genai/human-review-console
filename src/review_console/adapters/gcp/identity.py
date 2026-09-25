@@ -31,7 +31,7 @@ from hex_service_kit.federation import (
 from hex_service_kit.identity import IdentityError, Principal, RequestContext
 
 from ...config import Settings
-from ...ports.identity import VERIFIED
+from ...ports.identity import VERIFIED, AudienceUnconfiguredError
 
 # This repository's names for the kit's transport facts. They are REBOUND, not re-declared:
 # the header name, the issuer and the key-set URL are the same three strings in every
@@ -90,48 +90,13 @@ class IapIdentityAdapter:
         return value
 
     def resolve(self, ctx: RequestContext) -> Principal:
-        # ONE selection function, in the commons, rather than another copy of an `or` chain. It
-        # examines BOTH names an assertion travels under, prefers the edge-injected one, and
-        # strips, so a header the portal rendered blank is ABSENT rather than an assertion: a
-        # whitespace-only value is truthy, and unstripped it would skip this refusal and be
-        # refused further down by the algorithm pin, which reports a malformed token for what is
-        # actually a missing one.
-        #
-        # The keys are lower-cased here rather than assumed. ``RequestContext`` documents them as
-        # lower-cased and the web layer supplies them that way, but this is a dictionary lookup
-        # rather than ``ctx.header``, and an identity that goes missing because of header CASE is
-        # the same class of silent refusal this line exists to end.
-        try:
-            source = select_assertion({k.lower(): v for k, v in ctx.headers.items()})
-        except IdentityError as exc:
-            # This console's own sentence, kept so the refusal reads as it always has, with the
-            # commons reason appended because that reason names BOTH headers it examined. An
-            # operator who reads only "missing IAP assertion header" goes to the load balancer;
-            # the one who reads which two names were looked for goes to the hop that dropped one.
-            raise IdentityError(
-                f"missing IAP assertion header; request did not pass through IAP: {exc}"
-            ) from exc
-        assertion = source.assertion
-        if not self._audience:
-            raise IdentityError(
-                "REVIEW_IAP_AUDIENCE is not configured; cannot verify IAP assertion"
-            )
+        assertion = self._select_assertion(ctx)
+        self._require_audience()
         if not self._entitlements:
             raise IdentityError(
                 "REVIEW_IAP_ENTITLEMENTS_JSON is not configured; cannot authorize IAP subject"
             )
-        # The algorithm is judged before the verifier is handed the token: no cryptography, no
-        # cloud SDK, so the refusal is exercised by the offline gate. `alg: none` is an unsigned
-        # assertion and HS* would let the public key everybody already has sign one.
-        require_pinned_algorithm(assertion)
-        claims = self._verify(assertion)
-        # The issuer and the claim SET are stated here rather than inherited from verify_token,
-        # which checks neither. `email` is required outright now: the previous `email or sub`
-        # reader could key the entitlement mapping below off a numeric subject when the email
-        # claim was absent, and the reviewed mapping is written in email addresses.
-        require_claims(
-            claims, issuer=_IAP_ISSUER, audience=self._audience, required=_REQUIRED_CLAIMS
-        )
+        claims = self._verified_claims(assertion)
         subject = str(claims["email"]).strip()
 
         entitlement = self._entitlements.get(subject)
@@ -162,6 +127,74 @@ class IapIdentityAdapter:
             assurance="iap",
             source="gcp-iap",
         )
+
+    def verify_service_assertion(self, ctx: RequestContext) -> str:
+        """The verified email of the caller IAP authenticated, for the SERVICE intake.
+
+        Behind the portal's IAP edge a producer's request arrives with the PORTAL's token in
+        ``Authorization`` (the portal replaces it on every request it forwards) and the edge's
+        assertion about the ORIGINAL caller in the forwarded header. This verifies that
+        assertion on exactly the path :meth:`resolve` uses (header selection, audience,
+        algorithm pin, signature, issuer, required claims) and returns its ``email``,
+        lower-cased. It reads no entitlement mapping: whether that address may submit is the
+        machine-caller allowlist's decision, made by the caller of this method.
+
+        Raises :class:`~review_console.ports.identity.AudienceUnconfiguredError` when
+        ``REVIEW_IAP_AUDIENCE`` is unset (a deployment fault, not a caller's), and
+        :class:`IdentityError` for a missing or unverifiable assertion.
+        """
+        # The policy before the token, as the commons S2S check orders it: with no audience this
+        # deployment can verify NOBODY, and that is the answer whatever the request carried.
+        self._require_audience()
+        assertion = self._select_assertion(ctx)
+        claims = self._verified_claims(assertion)
+        return str(claims["email"]).strip().lower()
+
+    @staticmethod
+    def _select_assertion(ctx: RequestContext) -> str:
+        # ONE selection function, in the commons, rather than another copy of an `or` chain. It
+        # examines BOTH names an assertion travels under, prefers the edge-injected one, and
+        # strips, so a header the portal rendered blank is ABSENT rather than an assertion: a
+        # whitespace-only value is truthy, and unstripped it would skip this refusal and be
+        # refused further down by the algorithm pin, which reports a malformed token for what is
+        # actually a missing one.
+        #
+        # The keys are lower-cased here rather than assumed. ``RequestContext`` documents them as
+        # lower-cased and the web layer supplies them that way, but this is a dictionary lookup
+        # rather than ``ctx.header``, and an identity that goes missing because of header CASE is
+        # the same class of silent refusal this line exists to end.
+        try:
+            source = select_assertion({k.lower(): v for k, v in ctx.headers.items()})
+        except IdentityError as exc:
+            # This console's own sentence, kept so the refusal reads as it always has, with the
+            # commons reason appended because that reason names BOTH headers it examined. An
+            # operator who reads only "missing IAP assertion header" goes to the load balancer;
+            # the one who reads which two names were looked for goes to the hop that dropped one.
+            raise IdentityError(
+                f"missing IAP assertion header; request did not pass through IAP: {exc}"
+            ) from exc
+        return source.assertion
+
+    def _require_audience(self) -> None:
+        if not self._audience:
+            raise AudienceUnconfiguredError(
+                "REVIEW_IAP_AUDIENCE is not configured; cannot verify IAP assertion"
+            )
+
+    def _verified_claims(self, assertion: str) -> dict[str, Any]:
+        # The algorithm is judged before the verifier is handed the token: no cryptography, no
+        # cloud SDK, so the refusal is exercised by the offline gate. `alg: none` is an unsigned
+        # assertion and HS* would let the public key everybody already has sign one.
+        require_pinned_algorithm(assertion)
+        claims = self._verify(assertion)
+        # The issuer and the claim SET are stated here rather than inherited from verify_token,
+        # which checks neither. `email` is required outright now: the previous `email or sub`
+        # reader could key the entitlement mapping below off a numeric subject when the email
+        # claim was absent, and the reviewed mapping is written in email addresses.
+        require_claims(
+            claims, issuer=_IAP_ISSUER, audience=self._audience, required=_REQUIRED_CLAIMS
+        )
+        return claims
 
     def _verify(self, assertion: str) -> dict[str, Any]:  # pragma: no cover - needs live GCP
         # Lazy imports keep local/onprem import-clean.

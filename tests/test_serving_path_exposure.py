@@ -296,7 +296,12 @@ def test_the_secure_profile_refuses_an_unconfigured_service_identity_policy() ->
     """With ``REVIEW_S2S_AUDIENCE`` and ``REVIEW_S2S_ALLOWED_CALLERS`` both unset (nothing sets
     them: not the Terraform, not any doc), the pinned commons asked google-auth to verify with
     ``audience=None``, which skips the ``aud`` check, and matched the caller against an empty
-    allowlist, which admits everyone. The application-layer S2S check contributed nothing."""
+    allowlist, which admits everyone. The application-layer S2S check contributed nothing.
+
+    The secure profiles now authenticate a service caller from the forwarded IAP assertion
+    (``tests/unit/test_iap_service_intake.py``), and the same rule holds there: with
+    ``REVIEW_IAP_AUDIENCE`` unset no caller can be verified, so the answer is 503 before any
+    request material is looked at."""
     result = _probe("gcp")
     assert result.returncode == 0, f"probe failed:\n{result.stderr}"
     payload = json.loads(result.stdout.strip().splitlines()[-1])

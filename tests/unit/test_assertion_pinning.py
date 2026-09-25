@@ -151,42 +151,62 @@ class TestTheRefusalsFire:
             )
 
 
+_PIN_NAMES = {"require_pinned_algorithm", "_refuse_unpinned_algorithm"}
+_VERIFY_NAMES = {"_verify", "verify_token", "verify_oauth2_token"}
+#: The one method that pins and then verifies. Every entry point that reads a claim must reach
+#: the verifier through it and through nothing else.
+_VERIFYING_HELPER = "_verified_claims"
+#: The adapter's entry points: the reviewer path and the service intake behind the IAP edge.
+_ENTRY_POINTS = ("resolve", "verify_service_assertion")
+
+
+def _method(tree: ast.AST, name: str) -> ast.FunctionDef:
+    return next(
+        node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name == name
+    )
+
+
+def _call_lines(function: ast.FunctionDef, names: set[str]) -> list[int]:
+    return [
+        node.lineno
+        for node in ast.walk(function)
+        if isinstance(node, ast.Call)
+        and (
+            (isinstance(node.func, ast.Name) and node.func.id in names)
+            or (isinstance(node.func, ast.Attribute) and node.func.attr in names)
+        )
+    ]
+
+
 def test_the_algorithm_is_pinned_before_the_verifier_runs() -> None:
-    """Read off the source: the pin precedes verification inside `resolve`.
+    """Read off the source: the pin precedes verification on every path that reads a claim.
 
     A pin that runs after the token was verified never protected the verifier, and a test that
     only checks the pin is PRESENT cannot tell those apart. The walk records the source line of
-    the first algorithm-pin call and of the first verification call, and compares them.
+    the first algorithm-pin call and of the first verification call inside the verifying helper,
+    and compares them. It then requires each entry point to reach the verifier ONLY through that
+    helper: an entry point that called ``_verify`` itself would skip the pin, and this test would
+    otherwise still pass.
     """
     tree = ast.parse(inspect.getsource(_adapter_module()))
-    resolve = next(
-        node
-        for node in ast.walk(tree)
-        if isinstance(node, ast.FunctionDef) and node.name == "resolve"
+    helper = _method(tree, _VERIFYING_HELPER)
+    pins = _call_lines(helper, _PIN_NAMES)
+    verifies = _call_lines(helper, _VERIFY_NAMES)
+    assert pins, f"{_VERIFYING_HELPER}() never pins the signature algorithm"
+    assert verifies, f"{_VERIFYING_HELPER}() never verifies the assertion"
+    assert min(pins) < min(verifies), (
+        f"the algorithm pin is called at line {min(pins)} and the verifier at line "
+        f"{min(verifies)}. A pin after verification never protected the verifier."
     )
-    pin_names = {"require_pinned_algorithm", "_refuse_unpinned_algorithm"}
-    verify_names = {"_verify", "verify_token", "verify_oauth2_token"}
-
-    def first_line(names: set[str]) -> int | None:
-        lines = [
-            node.lineno
-            for node in ast.walk(resolve)
-            if isinstance(node, ast.Call)
-            and (
-                (isinstance(node.func, ast.Name) and node.func.id in names)
-                or (isinstance(node.func, ast.Attribute) and node.func.attr in names)
-            )
-        ]
-        return min(lines) if lines else None
-
-    pinned_at = first_line(pin_names)
-    verified_at = first_line(verify_names)
-    assert pinned_at is not None, "resolve() never pins the signature algorithm"
-    assert verified_at is not None, "resolve() never verifies the assertion"
-    assert pinned_at < verified_at, (
-        f"the algorithm pin is called at line {pinned_at} and the verifier at line "
-        f"{verified_at}. A pin after verification never protected the verifier."
-    )
+    for entry in _ENTRY_POINTS:
+        method = _method(tree, entry)
+        assert _call_lines(method, {_VERIFYING_HELPER}), (
+            f"{entry}() does not verify through {_VERIFYING_HELPER}(), so nothing here shows "
+            "it pins the algorithm first"
+        )
+        assert not _call_lines(method, _VERIFY_NAMES), (
+            f"{entry}() calls a verifier directly, bypassing the pin in {_VERIFYING_HELPER}()"
+        )
 
 
 def test_the_transport_facts_are_the_commons_values() -> None:

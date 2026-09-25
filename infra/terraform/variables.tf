@@ -42,6 +42,25 @@ variable "iap_entitlements_json" {
   }
 }
 
+# The producers' runtime service accounts admitted to POST /v1/service/reviews through the portal's
+# IAP edge (REVIEW_IAP_SERVICE_CALLERS_JSON). The console reads the caller from the forwarded IAP
+# assertion, never from Authorization, which the portal replaces with its own token. Empty leaves
+# the variable unset on the service, which admits no machine caller. Never list a person: anybody
+# named here may assert the maker and tenant of what they submit.
+variable "iap_service_callers" {
+  type        = list(string)
+  description = "Exact service-account emails of the producers allowed to submit reviews through the IAP edge."
+  default     = []
+
+  validation {
+    condition = alltrue([
+      for caller in var.iap_service_callers :
+      endswith(caller, ".gserviceaccount.com") && !strcontains(caller, "*") && trimspace(caller) == caller
+    ])
+    error_message = "iap_service_callers must list exact *.gserviceaccount.com emails only (no people, no wildcards)."
+  }
+}
+
 # Where Cloud Tasks deadline timers call back to re-evaluate a case (the adapter appends
 # /v1/cases/{id}/evaluate). This is the merged service's own internal LB URL; kept as a variable
 # rather than a self-reference to the Cloud Run resource so terraform has no dependency cycle.

@@ -83,3 +83,13 @@ class EndUserAuthUnavailableError(IdentityError):
     #: The status the API answers with. 401 is right where a caller could have authenticated
     #: and did not; a subclass meaning "nobody can, here" says so with a different code.
     http_status: int = 401
+
+
+class AudienceUnconfiguredError(IdentityError):
+    """The assertion audience is not configured, so NO assertion can be verified here.
+
+    A plain :class:`~hex_service_kit.identity.IdentityError` to every existing reader, which
+    therefore still refuses exactly as before. A distinct type so the service intake behind the
+    IAP edge can answer 503 (this deployment cannot authenticate any caller) rather than 401
+    (this caller did not authenticate).
+    """

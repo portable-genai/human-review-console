@@ -12,6 +12,49 @@ Operating the console: deploy, observe, respond, roll back.
   declines the lock in its tfvars and says why.
 - Identity: exact-audience IAP verification followed by the reviewed `agent-registry` subject map in
   `REVIEW_IAP_ENTITLEMENTS_JSON` (`REVIEW_PROFILE=gcp`).
+- Service intake (`POST /v1/service/reviews`, `POST /v1/audit/ping`) behind the IAP edge: the
+  SAME IAP verification, then the reviewed machine-caller allowlist
+  `REVIEW_IAP_SERVICE_CALLERS_JSON`. See "Review hand-offs through the IAP edge" below.
+
+## Review hand-offs through the IAP edge
+
+Under `REVIEW_PROFILE=gcp` or `platform` a producer's hand-off travels through the portal's IAP
+edge: the producer sends an ID token minted for the IAP OAuth client id to
+`https://<edge-host>/apps/human-review-console/api/v1/service/reviews`, IAP verifies it and hands
+the portal an assertion naming the producer's service account, and the portal forwards that
+assertion as `x-portal-iap-assertion` while REPLACING `Authorization` with the portal's own
+service token. Every reviewer's browser request carries that same portal token, so the console
+never reads `Authorization` on this path: a bearer names the portal and nobody else, and
+accepting it would let any signed-in reviewer POST a maker and tenant of their choosing.
+
+The intake instead verifies the forwarded assertion exactly as the reviewer path does
+(`REVIEW_IAP_AUDIENCE`, RS256/ES256 pin, IAP keys, IAP issuer, required claims) and admits the
+request only when the assertion's `email` is in `REVIEW_IAP_SERVICE_CALLERS_JSON`:
+
+| `REVIEW_IAP_SERVICE_CALLERS_JSON` | Effect |
+|---|---|
+| unset | no machine caller is admitted; every service submission behind the edge is refused 403 |
+| set to an empty value | the process refuses to boot |
+| not a non-empty JSON array of exact `*.gserviceaccount.com` emails | the process refuses to boot |
+| `["aml-alert-triage@<project>.iam.gserviceaccount.com", ...]` | those producers' service accounts are admitted |
+
+Example: `REVIEW_IAP_SERVICE_CALLERS_JSON='["aml-alert-triage@proj.iam.gserviceaccount.com"]'`.
+A person's address, a wildcard or a blank entry is refused at boot, because anybody named here
+may assert the maker and tenant of what they submit. List each producer's runtime service account
+and nothing else; the portal's own service account does not belong here.
+
+| Response | Meaning |
+|---|---|
+| 401 | no IAP assertion on the request, or one that does not verify |
+| 403 | a verified caller the allowlist does not name (every human, and any unlisted service account) |
+| 503 | `REVIEW_IAP_AUDIENCE` is unset, so no caller can be verified |
+
+Each producer must also be able to reach the edge: its service account needs IAP access on the
+portal's backend (`roles/iap.httpsResourceAccessor`), and it mints its token for the IAP OAuth
+client id (`HUMAN_REVIEW_IAP_AUDIENCE` on the producer), not for the backend-service path this
+console verifies against. `REVIEW_S2S_TOKEN` authenticates the service intake under `local` and
+`onprem` only; `REVIEW_S2S_ALLOWED_CALLERS` and `REVIEW_S2S_AUDIENCE` are no longer read, because
+the Google-signed bearer path they configured would accept the portal's token behind the edge.
 
 ## Deploy
 
@@ -110,5 +153,10 @@ ignores unknown fields), so a rollback of the service never invalidates existing
   proceeds without a verified principal.
 - **Entitlement map missing or stale:** a verified but unmapped subject receives 401. Update the
   reviewed `agent-registry` export; never infer approver groups from an email domain or browser field.
-- **S2S secret rotation:** update `REVIEW_S2S_TOKEN` (or the allowed-callers audience) on the
-  service; the S2S endpoint fails closed until the caller presents a valid token.
+- **S2S secret rotation (`local`, `onprem`):** update `REVIEW_S2S_TOKEN` on the service; the S2S
+  endpoint fails closed until the caller presents a valid token.
+- **A producer's hand-off answers 403 behind the edge:** its assertion verified but its service
+  account is not in `REVIEW_IAP_SERVICE_CALLERS_JSON` (the detail names the address and says
+  whether the list is unset). Add the reviewed service account and redeploy; never add a person.
+  A 401 means the assertion never arrived or did not verify: check the producer mints for the IAP
+  OAuth client id and that the portal forwards `x-portal-iap-assertion`.
