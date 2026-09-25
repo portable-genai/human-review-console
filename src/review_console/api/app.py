@@ -55,6 +55,7 @@ from hex_service_kit.netdefaults import (
 from hex_service_kit.web import (
     add_loopback_exposure_guard,
     add_security_headers,
+    install_answer_provenance,
     make_require_service_caller,
 )
 
@@ -418,6 +419,15 @@ app.add_middleware(
     + (["X-Dev-Persona"] if _EXPOSURE == "local" else []),
 )
 add_security_headers(app, frame_ancestors=_FRAME_ANCESTORS, profile=_EXPOSURE)
+
+# Which model answered, and whether it searched: a model adapter notes it as it calls
+# (`hex_service_kit.provenance.note_model` / `note_search`) and this emits it as `X-Answered-By` /
+# `X-Search-Used` on the same response. This console has no model port, so nothing is ever noted
+# and neither header is ever sent: the model pill keeps showing the configured `generator_model`
+# (`no-model`) from `/healthz`. It is installed anyway so that a model port added later reaches the
+# pills by noting, with no second wiring step to forget. The console calls this service
+# cross-origin, so the kit also lists both headers in `Access-Control-Expose-Headers`.
+install_answer_provenance(app)
 
 # A request arrives with nothing authenticating the END USER unless BOTH of these hold, and the
 # guard bounds every case where either fails:

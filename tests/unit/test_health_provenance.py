@@ -1,7 +1,7 @@
-"""The banner's server half: this console names its runtime, and says it has no model.
+"""The model pill's server half: this console names its runtime, and says it has no model.
 
-Every served UI in the fleet states, at the top of every page, where it is running and
-which model answers (org decision, 2026-08-30). The console must never infer either.
+Every served UI in the fleet shows, at the top right of every page, the model that answers and
+where it is running (owner decision, 2026-09-23). The console must never infer either.
 
 This one is the interesting case in the sweep. It declares no ``llm`` port at all: routing,
 SLA clocks and quorum are deterministic, and the decision itself is a human's. So it answers

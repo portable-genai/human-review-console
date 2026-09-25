@@ -13,7 +13,7 @@ import type {
 
 // The same resolver `proxy.ts` uses for `connect-src`, so the origin this module calls and the
 // origin the policy permits cannot drift apart, and an emptied variable refuses in both.
-const BASE_URL = resolveApiBaseUrl(process.env.NEXT_PUBLIC_REVIEW_API_URL);
+export const BASE_URL = resolveApiBaseUrl(process.env.NEXT_PUBLIC_REVIEW_API_URL);
 
 let devPersona = "";
 

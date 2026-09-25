@@ -57,6 +57,13 @@ or PR bodies. Synthetic, obviously fictional data only.
 3. Implement local, gcp, platform, and onprem adapters with the single-settings constructor.
 4. Add exact bindings and a typed cached property to `Container`.
 5. Wire the orchestrator and inbound API or CLI without importing adapters into the domain.
+   A MODEL port also rewrites `Settings.generator_model` to read its binding, and every adapter
+   notes what answered: the `gcp` adapter calls `hex_service_kit.provenance.note_model(<the
+   model id it called>)` after a successful call, and `provenance.note_search()` only when an
+   online search tool was attached to that call; the `local` stub notes its own stub name.
+   `api/app.py` already turns the notes into the headers the console's model pill reads. The
+   request's `temperature` is `float | None = None` and is omitted when `None` (some models
+   reject it): pin `0.0` only for extraction, classification and scoring, leave drafting free.
 6. Add structural tests, deterministic behavior tests, and a fail-fast onprem test.
 7. Update `ARCHITECTURE.md`, `SPEC.md`, `COMPLIANCE.md`, `docs/ADOPTING.md`, FAQs, demo,
    portability proof, and `docs/practices-audit.md`.
