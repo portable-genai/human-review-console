@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit",
-    "test": "node --test scripts/security-headers.test.mjs scripts/three-state-env.test.mjs",
+    "test": "node --test scripts/security-headers.test.mjs scripts/three-state-env.test.mjs scripts/answer-provenance.test.mjs",
     "assert-hydratable": "node scripts/assert-hydratable.mjs"
   },
   "dependencies": {
