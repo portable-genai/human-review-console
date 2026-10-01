@@ -36,7 +36,6 @@ retention_days = 2557
 # vpc_sc_enforce = true. Set enable_vpc_sc = false only for a project-scoped deploy with no org
 # access policy (that deployment is NOT the sovereign posture).
 # access_policy_id = "123456789012"
-# enable_vpc_sc    = true
 # vpc_sc_enforce   = false
 # operator_members = ["user:oncall@example.invalid", "serviceAccount:deployer@example.invalid"]
 
@@ -46,3 +45,8 @@ retention_days = 2557
 # Set after the internal load balancer fronting the service exists; Cloud Tasks deadline timers
 # POST back here to /v1/cases/{id}/evaluate. Leave empty on the first apply.
 # timer_callback_url = "https://console.internal.example.com"
+
+# Slice 7 (2026-10-01): the perimeter and the org policies default OFF in code, so a
+# production deployment states them. A shared project states false in every stack but
+# the one that owns them.
+enable_vpc_sc = true

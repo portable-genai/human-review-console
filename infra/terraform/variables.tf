@@ -155,8 +155,8 @@ variable "access_policy_id" {
 
 variable "enable_vpc_sc" {
   type        = bool
-  description = "Create the VPC Service Controls perimeter around the console's data APIs (P-03)."
-  default     = true
+  description = "Create the VPC Service Controls perimeter around the console's data APIs (P-03). Off by default since 2026-10-01 (slice 7 of the posture rule: a control that is not irreversible defaults off in code); terraform.tfvars.example states the production form."
+  default     = false
 }
 
 variable "vpc_sc_enforce" {
